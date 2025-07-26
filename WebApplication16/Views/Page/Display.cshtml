@@ -1,0 +1,16 @@
+﻿@model YourCmsName.Models.Page
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container mt-4">
+    <article>
+        <header>
+            <h1>@Model.Title</h1>
+        </header>
+        <hr />
+        <section class="page-content">
+            @Html.Raw(Model.Content)
+        </section>
+    </article>
+</div>
