@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebApplication16.Areas.Identity.DataAccess;
+using WebApplication16.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("WebApplication16ContextConnection") ?? throw new InvalidOperationException("Connection string 'WebApplication16ContextConnection' not found.");
@@ -8,7 +9,7 @@ var connectionString = builder.Configuration.GetConnectionString("WebApplication
 builder.Services.AddDbContext<WebApplication16Context>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<WebApplication16Context>();
-
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 //
