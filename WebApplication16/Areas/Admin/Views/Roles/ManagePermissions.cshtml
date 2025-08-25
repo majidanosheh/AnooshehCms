@@ -1,0 +1,50 @@
+﻿@model WebApplication16.ViewModels.PermissionViewModel
+
+@{
+    ViewData["Title"] = "مدیریت مجوزها برای نقش: " + Model.RoleName;
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form asp-action="ManagePermissions" method="post">
+    <input type="hidden" asp-for="RoleId" />
+    <div class="card">
+        <div class="card-header">
+            <h5>مجوزهای دسترسی</h5>
+        </div>
+        <div class="card-body">
+            @{
+                var allPermissions = Model.RoleClaims;
+                var modules = allPermissions.Select(p => p.Value.Split('.')[1]).Distinct();
+            }
+
+            @foreach (var module in modules)
+            {
+                <h5>@module</h5>
+                <div class="row">
+                    @for (int i = 0; i < allPermissions.Count; i++)
+                    {
+                        if (allPermissions[i].Value.Contains(module))
+                        {
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input type="hidden" asp-for="RoleClaims[i].Type" />
+                                    <input type="hidden" asp-for="RoleClaims[i].Value" />
+                                    <input asp-for="RoleClaims[i].IsSelected" class="form-check-input" />
+                                    <label class="form-check-label" asp-for="RoleClaims[i].IsSelected">
+                                        @allPermissions[i].Value.Split('.')[2]
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+                <hr />
+            }
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-success">ذخیره تغییرات</button>
+            <a asp-action="Index" class="btn btn-secondary">انصراف</a>
+        </div>
+    </div>
+</form>

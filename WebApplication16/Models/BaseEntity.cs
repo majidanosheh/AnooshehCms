@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace YourCmsName.Models // نام پروژه خود را جایگزین کنید
+namespace WebApplication16.Models // نام پروژه خود را جایگزین کنید
 {
     public abstract class BaseEntity
     {

@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication16.Areas.Identity.DataAccess; // فضای نام DbContext خود را وارد کنید
 
-namespace YourCmsName.Controllers // نام پروژه خود را جایگزین کنید
+namespace WebApplication16.Controllers // نام پروژه خود را جایگزین کنید
 {
     public class PageController : Controller
     {

@@ -7,11 +7,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebApplication16.Areas.Identity.DataAccess;
-using YourCmsName.Models;
+using WebApplication16.Constants;
+using WebApplication16.Models;
 
 namespace WebApplication16.Areas.Admin.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Area("Admin")]
     public class PagesController : Controller
     {
@@ -23,6 +24,7 @@ namespace WebApplication16.Areas.Admin.Controllers
         }
 
         // GET: Admin/Pages
+        [Authorize(Policy = Permissions.Pages.View)]
         public async Task<IActionResult> Index()
         {
             return View(await _context.Pages.ToListAsync());
@@ -47,6 +49,7 @@ namespace WebApplication16.Areas.Admin.Controllers
         }
 
         // GET: Admin/Pages/Create
+        [Authorize(Policy = Permissions.Pages.Create)]
         public IActionResult Create()
         {
             return View();
@@ -55,6 +58,7 @@ namespace WebApplication16.Areas.Admin.Controllers
         // POST: Admin/Pages/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.Pages.Create)]
         public async Task<IActionResult> Create([Bind("Title,Content,Slug,Id,CreatedAt,ModifiedAt,CreatedBy,ModifiedBy")] Page page)
         {
             if (ModelState.IsValid)
@@ -67,6 +71,7 @@ namespace WebApplication16.Areas.Admin.Controllers
         }
 
         // GET: Admin/Pages/Edit/5
+        [Authorize(Policy = Permissions.Pages.Edit)]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -87,6 +92,7 @@ namespace WebApplication16.Areas.Admin.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.Pages.Edit)]
         public async Task<IActionResult> Edit(int id, [Bind("Title,Content,Slug,Id,CreatedAt,ModifiedAt,CreatedBy,ModifiedBy")] Page page)
         {
             if (id != page.Id)
@@ -118,6 +124,7 @@ namespace WebApplication16.Areas.Admin.Controllers
         }
 
         // GET: Admin/Pages/Delete/5
+        [Authorize(Policy = Permissions.Pages.Delete)]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -138,6 +145,7 @@ namespace WebApplication16.Areas.Admin.Controllers
         // POST: Admin/Pages/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.Pages.Delete)]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var page = await _context.Pages.FindAsync(id);

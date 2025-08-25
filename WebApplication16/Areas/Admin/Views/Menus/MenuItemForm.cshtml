@@ -1,0 +1,85 @@
+﻿@model WebApplication16.ViewModels.MenuItemViewModel
+
+@{
+    ViewData["Title"] = Model.Id == 0 ? "افزودن آیتم جدید" : "ویرایش آیتم";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p class="text-muted">در این بخش می‌توانید یک آیتم جدید به منو اضافه کرده یا آیتم موجود را ویرایش کنید.</p>
+<hr />
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="@(Model.Id == 0 ? "CreateItem" : "EditItem")" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="MenuId" />
+
+            <div class="form-group mb-3">
+                <label asp-for="Title" class="control-label fw-bold"></label>
+                <input asp-for="Title" class="form-control" placeholder="مثال: درباره ما" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="border p-3 rounded mb-3">
+                <p class="fw-bold">مقصد لینک</p>
+                <div class="form-group mb-3">
+                    <label asp-for="Url" class="control-label">آدرس URL (برای لینک‌های خارجی)</label>
+                    <input asp-for="Url" class="form-control" id="urlInput" placeholder="https://example.com" />
+                    <span asp-validation-for="Url" class="text-danger"></span>
+                </div>
+                <div class="text-center my-2">یا</div>
+                <div class="form-group">
+                    <label for="internalPageSelect" class="control-label">لینک به یک صفحه داخلی</label>
+                    <select id="internalPageSelect" class="form-select" asp-items="ViewBag.InternalPages">
+                        <option value="">یک صفحه را انتخاب کنید...</option>
+                    </select>
+                    <small class="form-text text-muted">با انتخاب یک صفحه، آدرس URL به صورت خودکار پر می‌شود.</small>
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="ParentMenuItemId" class="control-label fw-bold">آیتم والد (برای ساخت زیرمنو)</label>
+                <select asp-for="ParentMenuItemId" class="form-select" asp-items="ViewBag.PossibleParents">
+                    <option value="">-- بدون والد (آیتم سطح بالا) --</option>
+                </select>
+                <small class="form-text text-muted">برای ساختن یک آیتم اصلی، این فیلد را خالی بگذارید.</small>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label asp-for="Order" class="control-label fw-bold"></label>
+                        <input asp-for="Order" class="form-control" type="number" />
+                        <span asp-validation-for="Order" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6 align-self-center">
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" asp-for="OpenInNewTab">
+                        <label class="form-check-label" asp-for="OpenInNewTab"></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mt-4">
+                <input type="submit" value="ذخیره تغییرات" class="btn btn-success" />
+                <a asp-action="Details" asp-route-id="@Model.MenuId" class="btn btn-secondary">انصراف</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        document.getElementById('internalPageSelect').addEventListener('change', function () {
+            var selectedSlug = this.value;
+            if (selectedSlug) {
+                document.getElementById('urlInput').value = '/' + selectedSlug;
+            }
+        });
+    </script>
+}

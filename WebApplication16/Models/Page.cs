@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace YourCmsName.Models // نام پروژه خود را جایگزین کنید
+namespace WebApplication16.Models // نام پروژه خود را جایگزین کنید
 {
-    public class Page :BaseEntity
+    public class Page : BaseEntity
     {
 
         [Required(ErrorMessage = "وارد کردن عنوان الزامی است")]

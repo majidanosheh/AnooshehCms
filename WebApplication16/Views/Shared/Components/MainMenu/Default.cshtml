@@ -1,0 +1,29 @@
+﻿@model List<WebApplication16.Models.MenuItem>
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<ul class="navbar-nav flex-grow-1">
+    @foreach (var item in Model)
+    {
+        <li class="nav-item @(item.SubMenuItems.Any() ? "dropdown" : "")">
+            @if (item.SubMenuItems.Any())
+            {
+                // این لینک برای منوی بازشونده است و href="#" دارد (بدون asp-*)
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown_@item.Id" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    @item.Title
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown_@item.Id">
+                    @foreach (var subItem in item.SubMenuItems.OrderBy(si => si.Order))
+                    {
+                        // این لینک از URL ذخیره شده در دیتابیس استفاده می‌کند (بدون asp-*)
+                        <li><a class="dropdown-item" href="@subItem.Url">@subItem.Title</a></li>
+                    }
+                </ul>
+            }
+            else
+            {
+                // این لینک هم از URL ذخیره شده در دیتابیس استفاده می‌کند (بدون asp-*)
+                <a class="nav-link text-dark" href="@item.Url">@item.Title</a>
+            }
+        </li>
+    }
+</ul>

@@ -1,0 +1,63 @@
+﻿@model IEnumerable<WebApplication16.ViewModels.AuditLogViewModel>
+
+@{
+    ViewData["Title"] = "مشاهده وقایع سیستم";
+    int totalPages = ViewBag.TotalPages;
+    int currentPage = ViewBag.CurrentPage;
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>در این بخش می‌توانید تاریخچه تمام فعالیت‌های مهم انجام شده در سیستم را مشاهده کنید.</p>
+
+<table class="table table-striped table-bordered">
+    <thead class="table-light">
+        <tr>
+            <th>کاربر</th>
+            <th>نوع عمل</th>
+            <th>موجودیت</th>
+            <th>جزئیات</th>
+            <th>زمان</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var log in Model)
+        {
+            <tr>
+                <td>@log.UserEmail</td>
+                <td>@log.ActionType</td>
+                <td>@log.EntityName</td>
+                <td>@log.Details</td>
+                <td>@log.Timestamp.ToLocalTime()</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- بخش کنترل‌های صفحه‌بندی -->
+@if (totalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="1">اولین</a>
+            </li>
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="@(currentPage - 1)">قبلی</a>
+            </li>
+
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="@(currentPage + 1)">بعدی</a>
+            </li>
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="@totalPages">آخرین</a>
+            </li>
+        </ul>
+    </nav>
+}

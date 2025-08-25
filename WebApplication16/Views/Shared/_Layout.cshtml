@@ -18,17 +18,21 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        @await Component.InvokeAsync("MainMenu")
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
             </div>
         </nav>
+        <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+            @* توضیح معماری: این خط به ASP.NET Core می‌گوید که View Component ما را در این نقطه اجرا کند.
+       کلمه کلیدی await ضروری است چون متد InvokeAsync ما به صورت آسنکرون اجرا می‌شود.
+       این کار باعث می‌شود که بارگذاری منو از دیتابیس، باعث بلاک شدن بقیه صفحه نشود.
+       حالا لی‌اوت ما هیچ اطلاعی از نحوه ساخته شدن منو ندارد و فقط آن را درخواست می‌کند. این یعنی جداسازی کامل دغدغه‌ها. *@
+            @await Component.InvokeAsync("MainMenu")
+            <partial name="_LoginPartial" />
+        </div>
     </header>
     <div class="container">
         <main role="main" class="pb-3">
@@ -38,7 +42,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 1404 - WebApplication16 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 1404 - Anoosheh - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

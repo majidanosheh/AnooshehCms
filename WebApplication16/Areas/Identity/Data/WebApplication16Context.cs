@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using YourCmsName.Models;
+using System.Text.Json;
+using WebApplication16.Enums;
+using WebApplication16.Models;
+
+
 
 namespace WebApplication16.Areas.Identity.DataAccess
 {
@@ -10,45 +13,164 @@ namespace WebApplication16.Areas.Identity.DataAccess
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-
+        // سازنده (Constructor) باید IHttpContextAccessor را دریافت کند
         public WebApplication16Context(DbContextOptions<WebApplication16Context> options, IHttpContextAccessor httpContextAccessor)
-        : base(options)
+            : base(options)
         {
-        }
-        protected override void OnModelCreating(ModelBuilder builder)
-        {
-            base.OnModelCreating(builder);
-            // Customize the ASP.NET Identity model and override the defaults if needed.
-            // For example, you can rename the ASP.NET Identity table names and more.
-            // Add your customizations after calling base.OnModelCreating(builder);
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public DbSet<Page> Pages { get; set; }
-        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public DbSet<Menu> Menus { get; set; }
+        public DbSet<MenuItem> MenuItems { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
+
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<Tag> Tags { get; set; }
+        public DbSet<PostTag> PostTags { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            var entries = ChangeTracker
-                .Entries()
-                .Where(e => e.Entity is BaseEntity && (
-                        e.State == EntityState.Added ||
-                        e.State == EntityState.Modified));
+            base.OnModelCreating(builder);
+            builder.Entity<AuditLog>()
+                .Property(e => e.ActionType)
+                .HasConversion<string>();
 
-            // گرفتن شناسه کاربر فعلی
-            //var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            // پیکربندی کلید ترکیبی برای جدول PostTag
+            builder.Entity<PostTag>()
+                .HasKey(pt => new { pt.PostId, pt.TagId });
+        }
 
-            foreach (var entityEntry in entries)
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var auditEntries = OnBeforeSaveChanges();
+            var result = await base.SaveChangesAsync(cancellationToken);
+            await OnAfterSaveChanges(auditEntries);
+            return result;
+        }
+
+        private List<AuditEntry> OnBeforeSaveChanges()
+        {
+            ChangeTracker.DetectChanges();
+            var auditEntries = new List<AuditEntry>();
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            foreach (var entry in ChangeTracker.Entries())
             {
-                var entity = (BaseEntity)entityEntry.Entity;
-                entity.ModifiedAt = DateTime.UtcNow;
-                //entity.ModifiedBy = userId;
-
-                if (entityEntry.State == EntityState.Added)
+                if (entry.Entity is BaseEntity baseEntity)
                 {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    //entity.CreatedBy = userId;
+                    var now = DateTime.UtcNow;
+                    if (entry.State == EntityState.Added)
+                    {
+                        baseEntity.CreatedAt = now;
+                        baseEntity.CreatedBy = userId;
+                    }
+                    baseEntity.ModifiedAt = now;
+                    baseEntity.ModifiedBy = userId;
+                }
+
+                if (entry.Entity is AuditLog || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                    continue;
+
+                var auditEntry = new AuditEntry(entry)
+                {
+                    TableName = entry.Metadata.GetTableName(),
+                    UserId = userId
+                };
+                auditEntries.Add(auditEntry);
+
+                foreach (var property in entry.Properties)
+                {
+                    if (property.IsTemporary)
+                    {
+                        auditEntry.TemporaryProperties.Add(property);
+                        continue;
+                    }
+
+                    string propertyName = property.Metadata.Name;
+                    if (property.Metadata.IsPrimaryKey())
+                    {
+                        auditEntry.KeyValues[propertyName] = property.CurrentValue;
+                        continue;
+                    }
+
+                    switch (entry.State)
+                    {
+                        case EntityState.Added:
+                            auditEntry.AuditType = AuditType.Create;
+                            auditEntry.NewValues[propertyName] = property.CurrentValue;
+                            break;
+                        case EntityState.Deleted:
+                            auditEntry.AuditType = AuditType.Delete;
+                            auditEntry.OldValues[propertyName] = property.OriginalValue;
+                            break;
+                        case EntityState.Modified:
+                            if (property.IsModified)
+                            {
+                                auditEntry.ChangedColumns.Add(propertyName);
+                                auditEntry.AuditType = AuditType.Update;
+                                auditEntry.OldValues[propertyName] = property.OriginalValue;
+                                auditEntry.NewValues[propertyName] = property.CurrentValue;
+                            }
+                            break;
+                    }
                 }
             }
-
-            return base.SaveChangesAsync(cancellationToken);
+            return auditEntries.Where(e => e.AuditType != AuditType.None).ToList();
         }
+
+        private async Task OnAfterSaveChanges(List<AuditEntry> auditEntries)
+        {
+            if (auditEntries == null || auditEntries.Count == 0)
+                return;
+
+            foreach (var auditEntry in auditEntries)
+            {
+                foreach (var prop in auditEntry.TemporaryProperties)
+                {
+                    if (prop.Metadata.IsPrimaryKey())
+                    {
+                        auditEntry.KeyValues[prop.Metadata.Name] = prop.CurrentValue;
+                    }
+                    else
+                    {
+                        auditEntry.NewValues[prop.Metadata.Name] = prop.CurrentValue;
+                    }
+                }
+
+                var audit = new AuditLog()
+                {
+                    UserId = auditEntry.UserId,
+                    ActionType = auditEntry.AuditType,
+                    EntityName = auditEntry.TableName,
+                    Timestamp = DateTime.UtcNow,
+                    PrimaryKey = JsonSerializer.Serialize(auditEntry.KeyValues),
+                    OldValues = auditEntry.OldValues.Count == 0 ? null : JsonSerializer.Serialize(auditEntry.OldValues),
+                    NewValues = auditEntry.NewValues.Count == 0 ? null : JsonSerializer.Serialize(auditEntry.NewValues),
+                    Details = $"ستون‌های تغییر یافته: {string.Join(", ", auditEntry.ChangedColumns)}"
+                };
+                await AuditLogs.AddAsync(audit);
+            }
+            await base.SaveChangesAsync();
+        }
+    }
+
+    public class AuditEntry
+    {
+        public AuditEntry(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+        {
+            Entry = entry;
+        }
+        public Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry Entry { get; }
+        public string UserId { get; set; }
+        public string TableName { get; set; }
+        public Dictionary<string, object> KeyValues { get; } = new Dictionary<string, object>();
+        public Dictionary<string, object> OldValues { get; } = new Dictionary<string, object>();
+        public Dictionary<string, object> NewValues { get; } = new Dictionary<string, object>();
+        public List<Microsoft.EntityFrameworkCore.ChangeTracking.PropertyEntry> TemporaryProperties { get; } = new List<Microsoft.EntityFrameworkCore.ChangeTracking.PropertyEntry>();
+        public AuditType AuditType { get; set; }
+        public List<string> ChangedColumns { get; } = new List<string>();
+        public bool HasTemporaryProperties => TemporaryProperties.Any();
     }
 }

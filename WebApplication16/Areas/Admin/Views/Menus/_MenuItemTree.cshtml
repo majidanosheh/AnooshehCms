@@ -1,0 +1,38 @@
+﻿@model IEnumerable<WebApplication16.Models.MenuItem>
+
+<div class="list-group">
+    @foreach (var item in Model)
+    {
+        <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="item-title">
+                    @if (item.SubMenuItems != null && item.SubMenuItems.Any())
+                    {
+                        <a class="btn btn-sm btn-outline-secondary me-2" data-bs-toggle="collapse" href="#collapse-@item.Id" role="button" aria-expanded="false" aria-controls="collapse-@item.Id">
+                            <i class="fas fa-chevron-down"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="me-2" style="width: 32px; display: inline-block;"></span> <!-- ایجاد فاصله یکسان -->
+                    }
+                    <strong>@item.Title</strong>
+                    <small class="text-muted ms-2">(@item.Url)</small>
+                </div>
+                <div class="item-actions">
+                    <a asp-action="EditItem" asp-route-id="@item.Id" class="btn btn-sm btn-warning">ویرایش</a>
+                    <a asp-action="DeleteItem" asp-route-id="@item.Id" class="btn btn-sm btn-danger">حذف</a>
+                </div>
+            </div>
+
+            @if (item.SubMenuItems != null && item.SubMenuItems.Any())
+            {
+                <div class="collapse" id="collapse-@item.Id">
+                    <div class="pt-2" style="margin-left: 48px;">
+                        <partial name="_MenuItemTree" model="item.SubMenuItems.OrderBy(i => i.Order)" />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

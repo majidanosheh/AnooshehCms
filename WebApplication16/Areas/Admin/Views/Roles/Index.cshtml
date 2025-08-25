@@ -1,0 +1,31 @@
+﻿@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityRole>
+
+@{
+    ViewData["Title"] = "مدیریت نقش‌ها";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>در این بخش می‌توانید نقش‌های کاربری را مدیریت کرده و سطوح دسترسی آن‌ها را تعیین کنید.</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>نام نقش</th>
+            <th>شناسه</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var role in Model)
+        {
+            <tr>
+                <td>@role.Name</td>
+                <td>@role.Id</td>
+                <td>
+                    <a asp-action="ManagePermissions" asp-route-roleId="@role.Id" class="btn btn-primary">مدیریت مجوزها</a>
+                    @* دکمه‌های ویرایش و حذف در آینده اضافه می‌شوند *@
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
