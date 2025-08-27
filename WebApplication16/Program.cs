@@ -63,7 +63,12 @@ app.MapControllerRoute(
     name: "AdminArea",
     pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}"
     );
-
+// مسیرهای مشخص وبلاگ
+app.MapControllerRoute(
+    name: "Blog",
+    pattern: "blog/{action=Index}/{slug?}",
+    defaults: new { controller = "Blog" });
+// ------------------------------------
 app.MapControllerRoute(
     name: "Page",
     pattern: "{slug}", // هر آدرسی را به عنوان slug در نظر می‌گیرد

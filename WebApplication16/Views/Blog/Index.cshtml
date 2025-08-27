@@ -1,0 +1,64 @@
+﻿@model IEnumerable<WebApplication16.Models.Post>
+
+@{
+    // عنوان صفحه را به صورت داینامیک از ViewBag می‌خوانیم. اگر وجود نداشت، از عنوان پیش‌فرض استفاده می‌کنیم.
+    ViewData["Title"] = ViewBag.ArchiveTitle ?? "وبلاگ";
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int currentPage = ViewBag.CurrentPage ?? 1;
+}
+
+<div class="container mt-5">
+    <h1>@ViewData["Title"]</h1>
+
+    @if (ViewBag.ArchiveTitle == null)
+    {
+        <p>آخرین مقالات و نوشته‌های ما را در اینجا دنبال کنید.</p>
+    }
+    <hr />
+
+    @if (Model.Any())
+    {
+        <div class="row">
+            @foreach (var post in Model)
+            {
+                <div class="col-md-8 mb-4">
+                    <div class="card">
+                        @if (!string.IsNullOrEmpty(post.FeaturedImageUrl))
+                        {
+                            <a asp-controller="Blog" asp-action="Post" asp-route-slug="@post.Slug"><img src="@post.FeaturedImageUrl" class="card-img-top" alt="@post.Title"></a>
+                        }
+                        <div class="card-body">
+                            <h2 class="card-title"><a asp-controller="Blog" asp-action="Post" asp-route-slug="@post.Slug" class="text-decoration-none text-dark">@post.Title</a></h2>
+                            <p class="card-text"><small class="text-muted">منتشر شده در <a asp-controller="Blog" asp-action="Category" asp-route-categorySlug="@post.Category.Slug">@post.Category.Name</a></small></p>
+                            <p class="card-text">@post.Excerpt</p>
+                            <a asp-controller="Blog" asp-action="Post" asp-route-slug="@post.Slug" class="btn btn-primary">ادامه مطلب</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- بخش کنترل‌های صفحه‌بندی (نسخه پیشرفته) -->
+        @if (totalPages > 1)
+        {
+            <nav>
+                <ul class="pagination justify-content-center">
+                    @* توضیح عمیق‌تر تگ‌های کمکی:
+                       - asp-action="@(ViewBag.ArchiveType ?? "Index")": این کد به صورت داینامیک، اکشن مقصد را تعیین می‌کند. برای صفحه اصلی وبلاگ، "Index" خواهد بود و برای صفحات آرشیو، "Category" یا "Tag".
+                       - asp-route-categorySlug="@ViewBag.ArchiveSlug": این کد، اسلاگ آرشیو فعلی را به URL اضافه می‌کند تا در زمان رفتن به صفحه بعد، فیلتر حفظ شود.
+                       - asp-route-pageNumber="@i": این کد، شماره صفحه مورد نظر را به URL اضافه می‌کند. *@
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" asp-controller="Blog" asp-action="@(ViewBag.ArchiveType ?? "Index")" asp-route-categorySlug="@ViewBag.ArchiveSlug" asp-route-pageNumber="@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="alert alert-info">هیچ مقاله‌ای برای نمایش یافت نشد.</div>
+    }
+</div>
