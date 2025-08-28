@@ -4,10 +4,20 @@ using WebApplication16.Areas.Identity.DataAccess;
 using WebApplication16.Constants;
 using WebApplication16.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("WebApplication16ContextConnection") ?? throw new InvalidOperationException("Connection string 'WebApplication16ContextConnection' not found.");
 
 builder.Services.AddDbContext<WebApplication16Context>(options => options.UseSqlServer(connectionString));
+// فعال‌سازی سرویس کش در حافظه
+builder.Services.AddMemoryCache();
+
+// ثبت سرویس تنظیمات به صورت Singleton
+// توضیح عمیق‌تر Lifetime:
+// Singleton یعنی فقط یک نمونه از SettingsService در طول کل عمر برنامه ساخته می‌شود و بین تمام درخواست‌ها مشترک است.
+// این برای سرویس تنظیمات که حالت سراسری دارد و به کش دسترسی پیدا می‌کند، بهترین و بهینه‌ترین انتخاب است.
+// در مقابل، Scoped (یک نمونه به ازای هر درخواست وب) یا Transient (یک نمونه جدید در هر بار تزریق) برای این سناریو مناسب نیستند.
+builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
 //builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<WebApplication16Context>();
 

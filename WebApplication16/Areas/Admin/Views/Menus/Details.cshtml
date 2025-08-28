@@ -4,7 +4,7 @@
     ViewData["Title"] = "مدیریت آیتم‌های منو: " + Model.Name;
     var topLevelItems = ViewBag.MenuItems as List<MenuItem>;
 }
-
+<form>@Html.AntiForgeryToken()</form>
 <h1>@ViewData["Title"]</h1>
 <p class="text-muted">در این صفحه می‌توانید آیتم‌های منوی انتخاب شده را به صورت درختی مشاهده و مدیریت کنید.</p>
 
@@ -33,3 +33,66 @@
     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary">ویرایش نام منو</a> |
     <a asp-action="Index">بازگشت به لیست منوها</a>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <!-- اضافه کردن کتابخانه SortableJS از CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <script>
+        // توضیح فنی: DOMContentLoaded یک رویداد است که وقتی تمام عناصر HTML صفحه بارگذاری شدند، اجرا می‌شود.
+        // ما کدهای خود را داخل این رویداد قرار می‌دهیم تا مطمئن شویم که تمام لیست‌های ما در صفحه وجود دارند.
+        document.addEventListener('DOMContentLoaded', function () {
+            var sortableLists = document.querySelectorAll('.sortable-list');
+
+            sortableLists.forEach(function (list) {
+                new Sortable(list, {
+                    animation: 150, // انیمیشن کوتاه برای جابجایی روان‌تر
+                    handle: '.handle', // مشخص می‌کند که فقط با کشیدن دستگیره، آیتم جابجا شود
+                    onEnd: function (evt) { // این تابع بعد از اتمام عملیات کشیدن و رها کردن، اجرا می‌شود
+                        var parentList = evt.from;
+                        var orderedIds = [];
+
+                        // تمام آیتم‌های موجود در همین لیست را پیدا کرده و شناسه‌های آنها را به ترتیب جدید می‌خوانیم
+                        parentList.childNodes.forEach(function(node) {
+                            if (node.nodeType === Node.ELEMENT_NODE && node.hasAttribute('data-id')) {
+                                orderedIds.push(parseInt(node.getAttribute('data-id')));
+                            }
+                        });
+
+                        // توضیح امنیتی: ما باید توکن ضدجعل (CSRF Token) را در هدر درخواست خود ارسال کنیم.
+                        // این توکن یک مقدار تصادفی است که توسط سرور تولید شده و تضمین می‌کند که این درخواست
+                        // از طرف سایت خود ما ارسال شده، نه از یک سایت مخرب دیگر.
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                        // ارسال ترتیب جدید به API با استفاده از Fetch API مدرن
+                        fetch('/api/menus/update-order', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': token
+                            },
+                            body: JSON.stringify(orderedIds) // تبدیل آرایه جاوا اسکریپت به یک رشته JSON
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                // اگر سرور یک خطای HTTP برگرداند (مثل 400 یا 500)
+                                alert('خطا در ذخیره‌سازی ترتیب. لطفاً کنسول را بررسی کنید.');
+                                return response.json().then(err => Promise.reject(err));
+                            }
+                            // در اینجا می‌توانید یک پیغام موفقیت به کاربر نمایش دهید (مثلاً با استفاده از Toastr)
+                            console.log('ترتیب با موفقیت ذخیره شد.');
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('خطا در ارتباط با سرور.');
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,39 @@
+﻿@model WebApplication16.ViewModels.SettingsViewModel
+
+@{
+    ViewData["Title"] = "تنظیمات عمومی سایت";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p class="text-muted">در این بخش می‌توانید اطلاعات کلیدی و عمومی سایت خود را مدیریت کنید.</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<form asp-action="Index" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <label asp-for="SiteName" class="control-label"></label>
+                <input asp-for="SiteName" class="form-control" />
+                <small class="form-text text-muted">این عنوان در بالای تمام صفحات و در نتایج جستجو نمایش داده می‌شود.</small>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="SiteDescription" class="control-label"></label>
+                <textarea asp-for="SiteDescription" class="form-control" rows="3"></textarea>
+                <small class="form-text text-muted">یک توضیح کوتاه برای موتورهای جستجو (حداکثر ۱۶۰ کاراکتر).</small>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="form-group">
+                <input type="submit" value="ذخیره تنظیمات" class="btn btn-primary" />
+            </div>
+        </div>
+    </div>
+</form>

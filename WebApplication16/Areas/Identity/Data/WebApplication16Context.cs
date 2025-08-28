@@ -29,6 +29,7 @@ namespace WebApplication16.Areas.Identity.DataAccess
         public DbSet<Category> Categories { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<PostTag> PostTags { get; set; }
+        public DbSet<SiteSetting> SiteSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
