@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApplication16.Areas.Identity.DataAccess;
 
 
-namespace YourCmsName.Web.Areas.Admin.Controllers
+namespace WebApplication16.Web.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [Authorize] // تضمین می‌کند که فقط کاربران لاگین کرده می‌توانند به این API دسترسی داشته باشند

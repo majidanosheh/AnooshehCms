@@ -7,7 +7,7 @@ using WebApplication16.Services;
 using WebApplication16.ViewModels;
 
 
-namespace YourCmsName.Web.Areas.Admin.Controllers
+namespace WebApplication16.Web.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [Authorize] // در آینده می‌توانیم یک Policy خاص برای این بخش تعریف کنیم

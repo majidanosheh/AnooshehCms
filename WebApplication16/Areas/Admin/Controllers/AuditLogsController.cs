@@ -7,7 +7,7 @@ using WebApplication16.Constants;
 using WebApplication16.ViewModels;
 
 
-namespace YourCmsName.Web.Areas.Admin.Controllers
+namespace WebApplication16.Web.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [Authorize(Policy = Permissions.AuditLogs.View)]
