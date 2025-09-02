@@ -1,10 +1,17 @@
 ﻿@inject WebApplication16.Services.ISettingsService SettingsService
+@{
+    var siteSettings = SettingsService.GetSettings();
+    var metaTitle = ViewData["MetaTitle"] ?? siteSettings.SiteName;
+    var metaDescription = ViewData["MetaDescription"] ?? siteSettings.SiteDescription;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - @SettingsService.GetSettings().SiteName</title>
+    <title>@metaTitle</title>
+    <meta name="description" content="@metaDescription" />
+    @* <title>@ViewData["Title"] - @SettingsService.GetSettings().SiteName</title> *@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WebApplication16.styles.css" asp-append-version="true" />

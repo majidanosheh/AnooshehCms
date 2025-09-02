@@ -1,4 +1,141 @@
-﻿@model WebApplication16.ViewModels.PostViewModel
+﻿@using WebApplication16.ViewModels
+@model PostViewModel
+
+@{
+    ViewData["Title"] = "ایجاد مقاله جدید";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    <partial name="_PostFormPartial" model="Model" />
+    <div class="form-group mt-3">
+        <input type="submit" value="ایجاد مقاله" class="btn btn-primary" />
+        <a asp-action="Index" class="btn btn-secondary">انصراف</a>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="[https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js](https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js)"></script>
+    <script>
+        ClassicEditor
+            .create(document.querySelector('#contentEditor'))
+            .catch(error => {
+                console.error(error);
+            });
+    </script>
+}
+
+
+
+@* --- بخش جدید و گسترش‌یافته تنظیمات SEO --- *@
+<div class="accordion mt-4" id="seoAccordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSeo">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeo" aria-expanded="false" aria-controls="collapseSeo">
+                تنظیمات SEO (بهینه‌سازی برای موتورهای جستجو)
+            </button>
+        </h2>
+        <div id="collapseSeo" class="accordion-collapse collapse" aria-labelledby="headingSeo" data-bs-parent="#seoAccordion">
+            <div class="accordion-body">
+                <p class="text-muted">این تنظیمات به شما کمک می‌کنند تا نحوه نمایش این صفحه در نتایج جستجوی گوگل را کنترل کنید. ارائه عنوان و توضیحات مناسب، شانس کلیک خوردن را به شدت افزایش می‌دهد.</p>
+
+                <hr>
+
+                <div class="form-group mb-3">
+                    <label asp-for="MetaTitle" class="control-label"></label>
+                    <input asp-for="MetaTitle" id="metaTitleInput" class="form-control" />
+                    <span id="metaTitleCounter" class="form-text text-muted">0 / 160</span>
+                    <span asp-validation-for="MetaTitle" class="text-danger"></span>
+                    <small class="form-text text-muted d-block">این عنوان در تب مرورگر و نتایج گوگل نمایش داده می‌شود. اگر خالی باشد، از عنوان اصلی مقاله استفاده می‌شود.</small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="MetaDescription" class="control-label"></label>
+                    <textarea asp-for="MetaDescription" id="metaDescriptionInput" class="form-control" rows="3"></textarea>
+                    <span id="metaDescriptionCounter" class="form-text text-muted">0 / 300</span>
+                    <span asp-validation-for="MetaDescription" class="text-danger"></span>
+                    <small class="form-text text-muted d-block">یک توضیح کوتاه و جذاب برای نمایش در نتایج گوگل (حدود ۱۵۵-۱۶۰ کاراکتر).</small>
+                </div>
+
+                <hr>
+
+                <h6 class="mt-4">پیش‌نمایش در گوگل</h6>
+                <div class="google-preview p-3 border rounded">
+                    <span id="previewUrl" class="text-secondary d-block">[https://yoursite.com/blog/@Model.Slug](https://yoursite.com/blog/@Model.Slug)</span>
+                    <h5 id="previewTitle" class="text-primary mt-1">@Model.MetaTitle</h5>
+                    <p id="previewDescription" class="text-muted mb-0">@Model.MetaDescription</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@* استایل‌های سفارشی برای پیش‌نمایش گوگل *@
+<style>
+    .google-preview {
+        font-family: Arial, sans-serif;
+        line-height: 1.4;
+    }
+
+        .google-preview #previewUrl {
+            font-size: 14px;
+        }
+
+        .google-preview #previewTitle {
+            font-size: 20px;
+            font-weight: normal;
+            margin-bottom: 3px;
+        }
+
+        .google-preview #previewDescription {
+            font-size: 14px;
+        }
+</style>
+
+@* اسکریپت‌های لازم برای شمارنده کاراکتر و پیش‌نمایش زنده *@
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const metaTitleInput = document.getElementById('metaTitleInput');
+        const metaTitleCounter = document.getElementById('metaTitleCounter');
+        const previewTitle = document.getElementById('previewTitle');
+
+        const metaDescriptionInput = document.getElementById('metaDescriptionInput');
+        const metaDescriptionCounter = document.getElementById('metaDescriptionCounter');
+        const previewDescription = document.getElementById('previewDescription');
+
+        function updateCounter(input, counter, preview, maxLength) {
+            const length = input.value.length;
+            counter.textContent = `${length} / ${maxLength}`;
+            preview.textContent = input.value;
+            if (length > maxLength) {
+                counter.classList.add('text-danger');
+            } else {
+                counter.classList.remove('text-danger');
+            }
+        }
+
+        metaTitleInput.addEventListener('keyup', () => updateCounter(metaTitleInput, metaTitleCounter, previewTitle, 160));
+        metaDescriptionInput.addEventListener('keyup', () => updateCounter(metaDescriptionInput, metaDescriptionCounter, previewDescription, 300));
+
+        // اجرای اولیه برای پر کردن مقادیر در فرم ویرایش
+        updateCounter(metaTitleInput, metaTitleCounter, previewTitle, 160);
+        updateCounter(metaDescriptionInput, metaDescriptionCounter, previewDescription, 300);
+    });
+</script>
+
+
+
+
+
+@* 
+
+
+@model WebApplication16.ViewModels.PostViewModel
 
 @{
     ViewData["Title"] = "ایجاد مقاله جدید";
@@ -67,4 +204,4 @@
                 console.error(error);
             });
     </script>
-}
+} *@

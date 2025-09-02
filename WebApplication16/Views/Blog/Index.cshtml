@@ -1,64 +1,52 @@
-﻿@model IEnumerable<WebApplication16.Models.Post>
+﻿@using WebApplication16.ViewModels
+@model PaginatedList<Post>
 
 @{
-    // عنوان صفحه را به صورت داینامیک از ViewBag می‌خوانیم. اگر وجود نداشت، از عنوان پیش‌فرض استفاده می‌کنیم.
-    ViewData["Title"] = ViewBag.ArchiveTitle ?? "وبلاگ";
-    int totalPages = ViewBag.TotalPages ?? 1;
-    int currentPage = ViewBag.CurrentPage ?? 1;
+    // توضیح منطق ویو:
+    // این کد بررسی می‌کند که آیا یک عنوان سفارشی از طریق ViewData ارسال شده یا خیر.
+    // اگر بله (یعنی در صفحه آرشیو هستیم)، از آن استفاده می‌کند. در غیر این صورت، از عنوان پیش‌فرض "وبلاگ" استفاده می‌کند.
+    ViewData["Title"] = ViewData["ArchiveTitle"] ?? "وبلاگ";
 }
 
-<div class="container mt-5">
-    <h1>@ViewData["Title"]</h1>
+<h1>@ViewData["Title"]</h1>
 
-    @if (ViewBag.ArchiveTitle == null)
+@if (!Model.Any())
+{
+    <p>مقاله‌ای برای نمایش وجود ندارد.</p>
+}
+else
+{
+    @foreach (var item in Model)
     {
-        <p>آخرین مقالات و نوشته‌های ما را در اینجا دنبال کنید.</p>
-    }
-    <hr />
+        <article class="blog-post mb-4">
+            <h2><a asp-action="Details" asp-route-slug="@item.Slug">@item.Title</a></h2>
+            <p class="blog-post-meta">@item.CreatedAt.ToShortDateString() در دسته <a asp-action="Category" asp-route-slug="@item.Category.Slug">@item.Category.Name</a></p>
 
-    @if (Model.Any())
-    {
-        <div class="row">
-            @foreach (var post in Model)
+            @if (!string.IsNullOrEmpty(item.FeaturedImageUrl))
             {
-                <div class="col-md-8 mb-4">
-                    <div class="card">
-                        @if (!string.IsNullOrEmpty(post.FeaturedImageUrl))
-                        {
-                            <a asp-controller="Blog" asp-action="Post" asp-route-slug="@post.Slug"><img src="@post.FeaturedImageUrl" class="card-img-top" alt="@post.Title"></a>
-                        }
-                        <div class="card-body">
-                            <h2 class="card-title"><a asp-controller="Blog" asp-action="Post" asp-route-slug="@post.Slug" class="text-decoration-none text-dark">@post.Title</a></h2>
-                            <p class="card-text"><small class="text-muted">منتشر شده در <a asp-controller="Blog" asp-action="Category" asp-route-categorySlug="@post.Category.Slug">@post.Category.Name</a></small></p>
-                            <p class="card-text">@post.Excerpt</p>
-                            <a asp-controller="Blog" asp-action="Post" asp-route-slug="@post.Slug" class="btn btn-primary">ادامه مطلب</a>
-                        </div>
-                    </div>
-                </div>
+                <img src="@item.FeaturedImageUrl" class="img-fluid rounded mb-3" alt="@item.Title" />
             }
-        </div>
 
-        <!-- بخش کنترل‌های صفحه‌بندی (نسخه پیشرفته) -->
-        @if (totalPages > 1)
-        {
-            <nav>
-                <ul class="pagination justify-content-center">
-                    @* توضیح عمیق‌تر تگ‌های کمکی:
-                       - asp-action="@(ViewBag.ArchiveType ?? "Index")": این کد به صورت داینامیک، اکشن مقصد را تعیین می‌کند. برای صفحه اصلی وبلاگ، "Index" خواهد بود و برای صفحات آرشیو، "Category" یا "Tag".
-                       - asp-route-categorySlug="@ViewBag.ArchiveSlug": این کد، اسلاگ آرشیو فعلی را به URL اضافه می‌کند تا در زمان رفتن به صفحه بعد، فیلتر حفظ شود.
-                       - asp-route-pageNumber="@i": این کد، شماره صفحه مورد نظر را به URL اضافه می‌کند. *@
-                    @for (int i = 1; i <= totalPages; i++)
-                    {
-                        <li class="page-item @(i == currentPage ? "active" : "")">
-                            <a class="page-link" asp-controller="Blog" asp-action="@(ViewBag.ArchiveType ?? "Index")" asp-route-categorySlug="@ViewBag.ArchiveSlug" asp-route-pageNumber="@i">@i</a>
-                        </li>
-                    }
-                </ul>
-            </nav>
-        }
+            <div class="excerpt">
+                @Html.Raw(item.Excerpt)
+            </div>
+            <a asp-action="Details" asp-route-slug="@item.Slug" class="btn btn-outline-primary mt-2">ادامه مطلب...</a>
+        </article>
+        <hr />
     }
-    else
-    {
-        <div class="alert alert-info">هیچ مقاله‌ای برای نمایش یافت نشد.</div>
-    }
-</div>
+
+    <!-- کنترل‌های صفحه‌بندی -->
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="page-item @prevDisabled">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex - 1)">قبلی</a>
+            </li>
+            <li class="page-item @nextDisabled">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex + 1)">بعدی</a>
+            </li>
+        </ul>
+    </nav>
+}

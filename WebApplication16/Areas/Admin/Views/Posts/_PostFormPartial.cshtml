@@ -1,80 +1,54 @@
-﻿@model WebApplication16.ViewModels.PostViewModel
+﻿@using WebApplication16.ViewModels
+@model PostViewModel
 
-@{
-    ViewData["Title"] = "ویرایش مقاله";
-}
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-<h1>@ViewData["Title"]</h1>
-
-<form asp-action="Edit" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
-    <div class="row">
-        <div class="col-md-8">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="form-group mb-3">
-                <label asp-for="Title" class="control-label"></label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger"></span>
-            </div>
-            <div class="form-group mb-3">
-                <label asp-for="Content" class="control-label"></label>
-                <textarea id="contentEditor" asp-for="Content" class="form-control"></textarea>
-            </div>
+<div class="row">
+    <div class="col-md-8">
+        <div class="form-group mb-3">
+            <label asp-for="Title" class="control-label"></label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
         </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="form-group mb-3">
-                        <label asp-for="Slug" class="control-label"></label>
-                        <input asp-for="Slug" class="form-control" />
-                        <span asp-validation-for="Slug" class="text-danger"></span>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label asp-for="CategoryId" class="control-label"></label>
-                        <select asp-for="CategoryId" class="form-control" asp-items="Model.Categories">
-                            <option value="">یک دسته‌بندی انتخاب کنید</option>
-                        </select>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label asp-for="SelectedTagIds" class="control-label"></label>
-                        <select asp-for="SelectedTagIds" class="form-control" asp-items="Model.Tags" multiple></select>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label asp-for="FeaturedImage" class="control-label"></label>
-                        <input asp-for="FeaturedImage" class="form-control" type="file" />
-                        @if (!string.IsNullOrEmpty(Model.FeaturedImageUrl))
-                        {
-                            <div class="mt-2">
-                                <img src="@Model.FeaturedImageUrl" class="img-fluid rounded" alt="تصویر شاخص فعلی" />
-                            </div>
-                        }
-                    </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" asp-for="IsPublished">
-                        <label class="form-check-label" asp-for="IsPublished"></label>
-                    </div>
-                    <div class="form-group">
-                        <input type="submit" value="ذخیره تغییرات" class="btn btn-success" />
-                    </div>
+        <div class="form-group mb-3">
+            <label asp-for="Content" class="control-label"></label>
+            <textarea asp-for="Content" id="contentEditor" class="form-control" rows="15"></textarea>
+            <span asp-validation-for="Content" class="text-danger"></span>
+        </div>
+        <div class="form-group mb-3">
+            <label asp-for="Excerpt" class="control-label"></label>
+            <textarea asp-for="Excerpt" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Excerpt" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="form-group mb-3">
+                    <label asp-for="Slug" class="control-label"></label>
+                    <input asp-for="Slug" class="form-control" />
+                    <span asp-validation-for="Slug" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="CategoryId" class="control-label"></label>
+                    <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.Categories">
+                        <option value="">-- انتخاب کنید --</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="SelectedTagIds" class="control-label"></label>
+                    <select asp-for="SelectedTagIds" class="form-control" asp-items="ViewBag.Tags" multiple="multiple"></select>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="FeaturedImage" class="control-label"></label>
+                    <input asp-for="FeaturedImage" class="form-control" />
+                    <span asp-validation-for="FeaturedImage" class="text-danger"></span>
                 </div>
             </div>
         </div>
     </div>
-</form>
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
-    <script>
-        ClassicEditor
-            .create(document.querySelector('#contentEditor'))
-            .catch(error => {
-                console.error(error);
-            });
-    </script>
-}
+</div>
 @* --- بخش جدید و گسترش‌یافته تنظیمات SEO --- *@
 <div class="accordion mt-4" id="seoAccordion">
     <div class="accordion-item">

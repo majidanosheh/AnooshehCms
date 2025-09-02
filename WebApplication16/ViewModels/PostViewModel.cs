@@ -34,5 +34,14 @@ namespace WebApplication16.ViewModels
         // --- پراپرتی‌های کمکی برای پر کردن دراپ‌دان‌ها در ویو ---
         public SelectList? Categories { get; set; }
         public MultiSelectList? Tags { get; set; }
+
+        [MaxLength(160, ErrorMessage = "حداکثر طول عنوان متا ۱۶۰ کاراکتر است")]
+        [Display(Name = "عنوان متا (SEO)")]
+        public string? MetaTitle { get; set; }
+
+        [MaxLength(300, ErrorMessage = "حداکثر طول توضیحات متا ۳۰۰ کاراکتر است")]
+        [Display(Name = "توضیحات متا (SEO)")]
+        [DataType(DataType.MultilineText)]
+        public string? MetaDescription { get; set; }
     }
 }

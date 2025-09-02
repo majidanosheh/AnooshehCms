@@ -28,5 +28,15 @@ namespace WebApplication16.Models
         public Category Category { get; set; }
 
         public ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
+        // --- SEO ---
+
+        [MaxLength(160, ErrorMessage = "حداکثر طول عنوان متا ۱۶۰ کاراکتر است")]
+        [Display(Name = "عنوان متا (SEO)")]
+        public string? MetaTitle { get; set; }
+
+        [MaxLength(300, ErrorMessage = "حداکثر طول توضیحات متا ۳۰۰ کاراکتر است")]
+        [Display(Name = "توضیحات متا (SEO)")]
+        [DataType(DataType.MultilineText)]
+        public string? MetaDescription { get; set; }
     }
 }

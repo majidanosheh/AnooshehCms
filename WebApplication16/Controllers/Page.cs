@@ -30,7 +30,9 @@ namespace WebApplication16.Controllers
             {
                 return NotFound();
             }
-
+            // اگر MetaTitle خالی بود، از عنوان اصلی صفحه استفاده کن
+            ViewData["MetaTitle"] = !string.IsNullOrEmpty(page.MetaTitle) ? page.MetaTitle : page.Title;
+            ViewData["MetaDescription"] = page.MetaDescription;
             // ارسال مدل Page به ویو برای نمایش
             return View(page);
         }

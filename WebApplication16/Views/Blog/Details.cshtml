@@ -1,0 +1,33 @@
+﻿@model Post
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<article class="blog-post">
+    <h1 class="blog-post-title display-4">@Model.Title</h1>
+    <p class="blog-post-meta text-muted">@Model.CreatedAt.ToShortDateString() در دسته <a asp-action="Category" asp-route-slug="@Model.Category.Slug">@Model.Category.Name</a></p>
+
+    @if (!string.IsNullOrEmpty(Model.FeaturedImageUrl))
+    {
+        <img src="@Model.FeaturedImageUrl" class="img-fluid rounded my-4" alt="@Model.Title" />
+    }
+
+    <div class="blog-content">
+        @* توضیح امنیتی: @Html.Raw برای نمایش صحیح محتوای HTML که از ویرایشگر متن غنی آمده، ضروری است.
+           این کار امن است چون ما به محتوایی که توسط مدیران خودمان وارد شده، اعتماد داریم.
+           اگر قرار بود محتوای تولید شده توسط کاربران (مثل کامنت‌ها) را نمایش دهیم، باید قبل از آن، حتماً محتوا را برای جلوگیری از حملات XSS پاکسازی (Sanitize) می‌کردیم. *@
+        @Html.Raw(Model.Content)
+    </div>
+
+    @if (Model.PostTags != null && Model.PostTags.Any())
+    {
+        <div class="mt-5">
+            <strong><i class="bi bi-tags-fill"></i> برچسب‌ها:</strong>
+            @foreach (var postTag in Model.PostTags)
+            {
+                <a asp-action="Tag" asp-route-slug="@postTag.Tag.Slug" class="btn btn-sm btn-outline-secondary m-1">@postTag.Tag.Name</a>
+            }
+        </div>
+    }
+</article>

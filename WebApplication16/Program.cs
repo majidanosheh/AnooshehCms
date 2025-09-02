@@ -69,24 +69,29 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
+//۱. مسیر Admin Area (بالاترین اولویت)
 app.MapControllerRoute(
     name: "AdminArea",
-    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}"
-    );
-// مسیرهای مشخص وبلاگ
+    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
+
+// ۲. مسیرهای مشخص وبلاگ (اولویت دوم)
 app.MapControllerRoute(
     name: "Blog",
     pattern: "blog/{action=Index}/{slug?}",
     defaults: new { controller = "Blog" });
-// ------------------------------------
+
+// ۳. مسیر داینامیک صفحات (اولویت سوم)
+// اگر این مسیر قبل از وبلاگ باشد، درخواست "/blog" را به عنوان یک اسلاگ صفحه در نظر می‌گیرد و خطای 404 می‌دهد.
 app.MapControllerRoute(
     name: "Page",
-    pattern: "{slug}", // هر آدرسی را به عنوان slug در نظر می‌گیرد
+    pattern: "{slug}",
     defaults: new { controller = "Page", action = "Display" });
 
+// ۴. مسیر پیش‌فرض (پایین‌ترین اولویت)
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+// ...
 
 //app.MapControllerRoute(
 //    name: "default",
