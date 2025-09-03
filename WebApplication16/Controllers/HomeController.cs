@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication16.Models;
+using WebApplication16.ViewModels;
+
+
 
 namespace WebApplication16.Controllers
 {
@@ -15,6 +18,7 @@ namespace WebApplication16.Controllers
 
         public IActionResult Index()
         {
+            //throw new Exception("این یک خطای آزمایشی است.");
             return View();
         }
 
@@ -26,7 +30,16 @@ namespace WebApplication16.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var viewModel = new WebApplication16.ViewModels.ErrorViewModel
+            {
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                ErrorMessage = "متاسفانه در پردازش درخواست شما خطایی رخ داده است. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید."
+            };
+            return View(viewModel);
         }
+
+
+
+
     }
 }

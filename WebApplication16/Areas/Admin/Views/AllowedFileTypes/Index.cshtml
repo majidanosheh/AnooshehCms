@@ -1,0 +1,54 @@
+﻿@{
+    ViewData["Title"] = "مدیریت انواع فایل مجاز";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>در این بخش می‌توانید انواع فایل‌هایی که کاربران مجاز به آپلود آن‌ها هستند را مدیریت کنید.</p>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">افزودن نوع فایل جدید</a>
+</p>
+
+<table id="fileTypesTable" class="table table-striped table-bordered" style="width:100%">
+    <thead>
+        <tr>
+            <th data-name="Extension">پسوند</th>
+            <th data-name="MimeType">نوع MIME</th>
+            <th data-name="Description">توضیحات</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+</table>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#fileTypesTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "filter": true,
+                "ajax": {
+                    "url": "/Admin/AllowedFileTypes/LoadData",
+                    "type": "POST",
+                    "datatype": "json"
+                },
+                "columns": [
+                    { "data": "extension", "name": "Extension", "autoWidth": true },
+                    { "data": "mimeType", "name": "MimeType", "autoWidth": true },
+                    { "data": "description", "name": "Description", "autoWidth": true },
+                    {
+                        "render": function (data, type, row) {
+                            return `<a href='/Admin/AllowedFileTypes/Edit/${row.id}' class='btn btn-sm btn-warning'>ویرایش</a> <a href='/Admin/AllowedFileTypes/Delete/${row.id}' class='btn btn-sm btn-danger'>حذف</a>`;
+                        },
+                        "orderable": false
+                    }
+                ],
+                "language": {
+                    "sSearch": "جستجو:",
+                    "oPaginate": { "sNext": "بعدی", "sPrevious": "قبلی" }
+                    // ... سایر ترجمه‌ها
+                }
+            });
+        });
+    </script>
+}

@@ -48,9 +48,12 @@
         </main>
     </div>
 
+    @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment env
+
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 1404 - Anoosheh - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2025 - YourCmsName - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <span class="text-danger font-weight-bold ml-5">Current Environment: @env.EnvironmentName</span>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

@@ -52,14 +52,24 @@ builder.Services.AddAuthorization(options =>
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 //
+builder.Services.AddScoped<IFileTypeValidator, DbFileTypeValidator>();
+//
 builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
+    // در محیط توسعه، ما می‌خواهیم جزئیات کامل خطا را ببینیم تا بتوانیم آن را دیباگ کنیم.
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    // در محیط محصول نهایی، کاربر هرگز نباید جزئیات خطا را ببیند.
+    // به جای آن، او را به صفحه خطای زیبای خودمان هدایت می‌کنیم.
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see [https://aka.ms/aspnetcore-hsts](https://aka.ms/aspnetcore-hsts).
     app.UseHsts();
 }
 app.MapRazorPages();

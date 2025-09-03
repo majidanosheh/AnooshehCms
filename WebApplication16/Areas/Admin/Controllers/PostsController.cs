@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,10 +21,13 @@ namespace WebApplication16.Areas.Admin.Controllers
     public class PostsController : Controller
     {
         private readonly WebApplication16Context _context;
+        private readonly IFileStorageService _fileStorageService;
 
-        public PostsController(WebApplication16Context context)
+        // اصلاح سازنده برای دریافت سرویس جدید
+        public PostsController(WebApplication16Context context, IFileStorageService fileStorageService)
         {
             _context = context;
+            _fileStorageService = fileStorageService;
         }
 
         // GET: Admin/Posts
@@ -34,10 +38,21 @@ namespace WebApplication16.Areas.Admin.Controllers
             return View(posts);
         }
 
-        private async Task PopulateDropdownsAsync(PostViewModel model)
+        private async Task PopulateDropdownsAsync(PostViewModel? model = null)
         {
-            model.Categories = new SelectList(await _context.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name", model.CategoryId);
-            model.Tags = new MultiSelectList(await _context.Tags.OrderBy(t => t.Name).ToListAsync(), "Id", "Name", model.SelectedTagIds);
+            var categories = await _context.Categories.AsNoTracking().ToListAsync();
+            var tags = await _context.Tags.AsNoTracking().ToListAsync();
+
+            if (model == null)
+            {
+                ViewBag.Categories = new SelectList(categories, "Id", "Name");
+                ViewBag.Tags = new SelectList(tags, "Id", "Name");
+            }
+            else
+            {
+                ViewBag.Categories = new SelectList(categories, "Id", "Name", model.CategoryId);
+                ViewBag.Tags = new SelectList(tags, "Id", "Name", model.SelectedTagIds);
+            }
         }
 
         // GET: Admin/Posts/Details/5
@@ -87,11 +102,26 @@ namespace WebApplication16.Areas.Admin.Controllers
                     PublishDate = viewModel.IsPublished ? DateTime.UtcNow : null
                 };
 
+                // ... (قبل از این بخش، متغیر post ساخته شده است)
                 if (viewModel.FeaturedImage != null)
                 {
-                    // از سرویس ذخیره‌سازی فایلی که قبلاً ساختیم، استفاده می‌کنیم
-                    var fileStorageService = HttpContext.RequestServices.GetRequiredService<IFileStorageService>();
-                    post.FeaturedImageUrl = await fileStorageService.SaveFileAsync(viewModel.FeaturedImage.OpenReadStream(), viewModel.FeaturedImage.FileName);
+                    try
+                    {
+                        post.FeaturedImageUrl = await _fileStorageService.SaveFileAsync(
+                            viewModel.FeaturedImage.OpenReadStream(),
+                            viewModel.FeaturedImage.FileName);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        ModelState.AddModelError("FeaturedImage", ex.Message);
+                    }
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    // اینجا viewModel را پاس می‌دهیم
+                    await PopulateDropdownsAsync(viewModel);
+                    return View("Create", viewModel);
                 }
 
                 _context.Add(post);
@@ -104,6 +134,7 @@ namespace WebApplication16.Areas.Admin.Controllers
                 }
                 await _context.SaveChangesAsync();
 
+                TempData["SuccessMessage"] = "مقاله با موفقیت ایجاد شد.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -179,11 +210,34 @@ namespace WebApplication16.Areas.Admin.Controllers
                 postToUpdate.CategoryId = viewModel.CategoryId;
                 postToUpdate.PublishDate = viewModel.IsPublished ? DateTime.UtcNow : null;
 
-                // مدیریت تصویر شاخص
+                // ... (قبل از این بخش، متغیر postToUpdate از دیتابیس خوانده شده است)
                 if (viewModel.FeaturedImage != null)
                 {
-                    var fileStorageService = HttpContext.RequestServices.GetRequiredService<IFileStorageService>();
-                    postToUpdate.FeaturedImageUrl = await fileStorageService.SaveFileAsync(viewModel.FeaturedImage.OpenReadStream(), viewModel.FeaturedImage.FileName);
+                    try
+                    {
+                        // اینجا از متغیر صحیح استفاده می‌کنیم
+                        postToUpdate.FeaturedImageUrl = await _fileStorageService.SaveFileAsync(
+                            viewModel.FeaturedImage.OpenReadStream(),
+                            viewModel.FeaturedImage.FileName);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        ModelState.AddModelError("FeaturedImage", ex.Message);
+                    }
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    // اینجا viewModel را پاس می‌دهیم
+                    await PopulateDropdownsAsync(viewModel);
+                    return View("Edit", viewModel);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    // اینجا viewModel را پاس می‌دهیم
+                    await PopulateDropdownsAsync(viewModel);
+                    return View("Create", viewModel);
                 }
 
                 // به‌روزرسانی تگ‌ها (رابطه چند-به-چند)

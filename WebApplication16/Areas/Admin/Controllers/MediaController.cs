@@ -28,12 +28,16 @@ namespace WebApplication16.Web.Areas.Admin.Controllers
             try
             {
                 var fileUrl = await _fileStorageService.SaveFileAsync(file.OpenReadStream(), file.FileName);
-
-                // TinyMCE منتظر یک پاسخ JSON با یک پراپرتی به نام 'location' است
                 return Ok(new { location = fileUrl });
+            }
+            catch (ArgumentException ex)
+            {
+                // خطاهای مربوط به اعتبارسنجی را به کاربر نمایش می‌دهیم
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
+                // خطاهای سرور را به صورت کلی مدیریت می‌کنیم
                 return StatusCode(500, new { message = $"Internal server error: {ex.Message}" });
             }
         }

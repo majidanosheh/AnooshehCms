@@ -30,7 +30,7 @@ namespace WebApplication16.Areas.Identity.DataAccess
         public DbSet<Tag> Tags { get; set; }
         public DbSet<PostTag> PostTags { get; set; }
         public DbSet<SiteSetting> SiteSettings { get; set; }
-
+        public DbSet<AllowedFileType> allowedFileTypes { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
