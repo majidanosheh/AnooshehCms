@@ -1,0 +1,28 @@
+﻿@model ContactSubmission
+@using WebApplication16.Extensions
+
+@{
+    ViewData["Title"] = "مشاهده پیام";
+}
+
+<h1>@ViewData["Title"]</h1>
+<div class="card">
+    <div class="card-header">
+        <strong>موضوع:</strong> @Model.Subject
+    </div>
+    <div class="card-body">
+        <p><strong>از طرف:</strong> @Model.Name (@Model.Email)</p>
+        <p><strong>تاریخ:</strong> @Model.CreatedAt</p>
+        <p><strong>وضعیت:</strong> @Model.Status.GetDisplayName()</p>
+        <hr />
+        <p><strong>متن پیام:</strong></p>
+        <p>@Model.Message</p>
+    </div>
+    <div class="card-footer">
+        <form asp-action="Delete" method="post" onsubmit="return confirm('آیا از حذف این پیام مطمئن هستید؟');">
+            <input type="hidden" asp-for="Id" />
+            <input type="submit" value="حذف پیام" class="btn btn-danger" />
+            <a asp-action="Index" class="btn btn-secondary">بازگشت به لیست</a>
+        </form>
+    </div>
+</div>

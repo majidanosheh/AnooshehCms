@@ -1,0 +1,19 @@
+﻿@using WebApplication16.ViewModels
+@model TicketAdminViewModel
+@{
+    ViewData["Title"] = "ویرایش تیکت";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post">
+            <partial name="_TicketFormPartial" model="Model" />
+            <div class="form-group mt-3">
+                <input type="submit" value="ذخیره" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">بازگشت به لیست</a>
+            </div>
+        </form>
+    </div>
+</div>

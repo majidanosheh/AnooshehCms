@@ -1,0 +1,23 @@
+﻿@model Ticket
+@{
+    ViewData["Title"] = "حذف تیکت";
+}
+
+<h1>@ViewData["Title"]</h1>
+<h3>آیا از حذف این تیکت مطمئن هستید؟</h3>
+<div>
+    <h4>تیکت: @Model.Title</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">عنوان</dt>
+        <dd class="col-sm-10">@Model.Title</dd>
+        <dt class="col-sm-2">کاربر</dt>
+        <dd class="col-sm-10">@Model.User.Email</dd>
+    </dl>
+
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="حذف" class="btn btn-danger" /> |
+        <a asp-action="Index">بازگشت به لیست</a>
+    </form>
+</div>

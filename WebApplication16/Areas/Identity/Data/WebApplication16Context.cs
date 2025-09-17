@@ -7,6 +7,7 @@ using WebApplication16.Models;
 
 
 
+
 namespace WebApplication16.Areas.Identity.DataAccess
 {
     public class WebApplication16Context : IdentityDbContext
@@ -31,8 +32,21 @@ namespace WebApplication16.Areas.Identity.DataAccess
         public DbSet<PostTag> PostTags { get; set; }
         public DbSet<SiteSetting> SiteSettings { get; set; }
         public DbSet<AllowedFileType> allowedFileTypes { get; set; }
+        public DbSet<Ticket> Tickets { get; set; }
+        public DbSet<TicketReply> TicketReplies { get; set; }
+        public DbSet<ContactSubmission> contactSubmissions { get; set; }
+
+        #region فرم ساز
+        public DbSet<Form> Forms { get; set; }
+        public DbSet<FormField> FormFields { get; set; }
+        public DbSet<FormSubmission> FormSubmissions { get; set; }
+        public DbSet<FormSubmissionData> FormSubmissionData { get; set; }
+        #endregion
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
+            base.OnModelCreating(builder);
+
             base.OnModelCreating(builder);
             builder.Entity<AuditLog>()
                 .Property(e => e.ActionType)
@@ -41,6 +55,25 @@ namespace WebApplication16.Areas.Identity.DataAccess
             // پیکربندی کلید ترکیبی برای جدول PostTag
             builder.Entity<PostTag>()
                 .HasKey(pt => new { pt.PostId, pt.TagId });
+
+            // --- این بخش  بسیار مهم است ---
+            builder.Entity<Ticket>()
+                .HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // جلوگیری از حذف آبشاری
+
+            builder.Entity<Ticket>()
+                .HasOne(t => t.AssignedToUser)
+                .WithMany()
+                .HasForeignKey(t => t.AssignedToUserId)
+                .OnDelete(DeleteBehavior.Restrict); // جلوگیری از حذف آبشاری
+
+            builder.Entity<TicketReply>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // جلوگیری از حذف آبشاری
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

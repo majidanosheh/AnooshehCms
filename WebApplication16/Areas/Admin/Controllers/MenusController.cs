@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using WebApplication16.Areas.Identity.DataAccess;
 using WebApplication16.Models;
 using WebApplication16.ViewModels;
+using System.Reflection;
+using WebApplication16.Constants;
 
 namespace WebApplication16.Areas.Admin.Controllers
 {
@@ -98,9 +100,10 @@ namespace WebApplication16.Areas.Admin.Controllers
         {
             var viewModel = new MenuItemViewModel { MenuId = menuId };
             await PopulateDropdownsAsync(menuId);
+            PopulatePermissionsDropdown();
             return View("MenuItemForm", viewModel);
         }
-
+      
         // POST: Admin/Menus/CreateItem
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -115,7 +118,8 @@ namespace WebApplication16.Areas.Admin.Controllers
                     Order = viewModel.Order,
                     MenuId = viewModel.MenuId,
                     ParentMenuItemId = viewModel.ParentMenuItemId,
-                    OpenInNewTab = viewModel.OpenInNewTab
+                    OpenInNewTab = viewModel.OpenInNewTab,
+                    RequiredPermission = viewModel.RequiredPermission
                 };
 
                 _context.Add(menuItem);
@@ -159,6 +163,7 @@ namespace WebApplication16.Areas.Admin.Controllers
             };
 
             await PopulateDropdownsAsync(viewModel.MenuId);
+            PopulatePermissionsDropdown();
             return View("MenuItemForm", viewModel);
         }
 
@@ -179,6 +184,7 @@ namespace WebApplication16.Areas.Admin.Controllers
                 menuItemToUpdate.Order = viewModel.Order;
                 menuItemToUpdate.ParentMenuItemId = viewModel.ParentMenuItemId;
                 menuItemToUpdate.OpenInNewTab = viewModel.OpenInNewTab;
+                menuItemToUpdate.RequiredPermission = viewModel.RequiredPermission;
 
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Details), new { id = viewModel.MenuId });
@@ -303,7 +309,29 @@ namespace WebApplication16.Areas.Admin.Controllers
             return _context.Menus.Any(e => e.Id == id);
         }
 
+        private void PopulatePermissionsDropdown()
+        {
+            var permissions = new List<SelectListItem>();
+            // از Reflection برای خواندن تمام ثابت‌های رشته‌ای از کلاس Permissions و کلاس‌های داخلی آن استفاده می‌کنیم
+            var fields = typeof(Permissions).GetNestedTypes()
+                .SelectMany(c => c.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy));
 
+            foreach (var field in fields)
+            {
+                var permissionValue = (string)field.GetValue(null);
+                var moduleName = permissionValue.Split('.')[1]; // استخراج نام ماژول (مثلاً Pages, Users)
+
+                permissions.Add(new SelectListItem
+                {
+                    Value = permissionValue,
+                    Text = permissionValue,
+                    // از SelectListGroup برای دسته‌بندی گزینه‌ها استفاده می‌کنیم
+                    Group = new SelectListGroup { Name = moduleName }
+                });
+            }
+
+            ViewBag.Permissions = permissions;
+        }
 
 
     }

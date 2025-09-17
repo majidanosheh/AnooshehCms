@@ -1,0 +1,39 @@
+﻿@using WebApplication16.Extensions;
+@using WebApplication16.ViewModels
+@model PaginatedList<ContactSubmission>;
+
+@{
+    ViewData["Title"] = "پیام‌های تماس";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>
+    <a asp-action="Create" class="btn btn-success">ایجاد تیکت جدید</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>موضوع</th>
+            <th>فرستنده</th>
+            <th>وضعیت</th>
+            <th>تاریخ دریافت</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr class="@(item.Status == WebApplication16.Enums.SubmissionStatus.New ? "fw-bold" : "")">
+                <td>@item.Subject</td>
+                <td>@item.Name (@item.Email)</td>
+                <td>@item.Status.GetDisplayName()</td>
+                <td>@item.CreatedAt</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">مشاهده</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<!-- کنترل‌های صفحه‌بندی -->

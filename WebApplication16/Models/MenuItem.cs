@@ -28,6 +28,10 @@ namespace WebApplication16.Models
         public int? ParentMenuItemId { get; set; }
         public MenuItem ParentMenuItem { get; set; }
 
+        [Display(Name = "مجوز مورد نیاز")]
+        public string? RequiredPermission { get; set; }
+        [Display(Name = "کلاس آیکون")]
+        public string? IconClass { get; set; }
         public List<MenuItem> SubMenuItems { get; set; } = new List<MenuItem>();
     }
 }

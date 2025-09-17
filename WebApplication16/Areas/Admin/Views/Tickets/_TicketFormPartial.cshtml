@@ -1,0 +1,36 @@
+﻿@using WebApplication16.ViewModels
+@model TicketAdminViewModel
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<input type="hidden" asp-for="Id" />
+
+<div class="form-group mb-3">
+    <label asp-for="Title" class="control-label"></label>
+    <input asp-for="Title" class="form-control" />
+    <span asp-validation-for="Title" class="text-danger"></span>
+</div>
+<div class="form-group mb-3">
+    <label asp-for="Description" class="control-label"></label>
+    <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+    <span asp-validation-for="Description" class="text-danger"></span>
+</div>
+<div class="form-group mb-3">
+    <label asp-for="UserId" class="control-label"></label>
+    <select asp-for="UserId" class="form-control" asp-items="Model.Users"></select>
+    <span asp-validation-for="UserId" class="text-danger"></span>
+</div>
+<div class="form-group mb-3">
+    <label asp-for="AssignedToUserId" class="control-label"></label>
+    <select asp-for="AssignedToUserId" class="form-control" asp-items="Model.Users">
+        <option value="">-- تخصیص نیافته --</option>
+    </select>
+    <span asp-validation-for="AssignedToUserId" class="text-danger"></span>
+</div>
+<div class="form-group mb-3">
+    <label asp-for="Status" class="control-label"></label>
+    <select asp-for="Status" class="form-control" asp-items="Model.Statuses"></select>
+</div>
+<div class="form-group mb-3">
+    <label asp-for="Priority" class="control-label"></label>
+    <select asp-for="Priority" class="form-control" asp-items="Model.Priorities"></select>
+</div>

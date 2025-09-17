@@ -1,0 +1,36 @@
+﻿@using WebApplication16.Extensions
+@model Ticket
+
+@{
+    ViewData["Title"] = "جزئیات تیکت: " + Model.Title;
+}
+
+<h1>@ViewData["Title"]</h1>
+<p><strong>وضعیت:</strong> @Model.Status.GetDisplayName()</p>
+<hr />
+
+<!-- نمایش پیام اصلی تیکت -->
+<div class="card mb-3">
+    <div class="card-header">شما در @Model.CreatedAt.ToShortDateString()</div>
+    <div class="card-body">@Model.Description</div>
+</div>
+
+<!-- نمایش پاسخ‌ها -->
+@foreach (var reply in Model.Replies.OrderBy(r => r.CreatedAt))
+{
+    <div class="card mb-3 @(reply.UserId == Model.UserId ? "" : "bg-light")">
+        <div class="card-header">@(reply.User.Email) در @reply.CreatedAt.ToShortDateString()</div>
+        <div class="card-body">@Html.Raw(reply.Message)</div>
+    </div>
+}
+
+<!-- فرم ارسال پاسخ جدید -->
+<hr />
+<h4>ارسال پاسخ</h4>
+<form asp-action="AddReply" method="post">
+    <input type="hidden" name="ticketId" value="@Model.Id" />
+    <div class="form-group mb-3">
+        <textarea name="message" class="form-control" rows="5"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">ارسال پاسخ</button>
+</form>

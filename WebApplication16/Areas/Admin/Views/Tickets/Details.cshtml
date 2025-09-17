@@ -1,0 +1,51 @@
+﻿@using WebApplication16.Extensions
+@using WebApplication16.ViewModels
+@model TicketDetailsViewModel
+
+@{
+    ViewData["Title"] = "جزئیات تیکت: " + Model.Ticket.Title;
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<!-- بخش نمایش اطلاعات تیکت -->
+<div class="card">
+    <div class="card-header">
+        ارسال شده توسط: @Model.Ticket.User.Email در تاریخ @Model.Ticket.CreatedAt.ToShortDateString()
+    </div>
+    <div class="card-body">
+        <p><strong>وضعیت:</strong> @Model.Ticket.Status.GetDisplayName()</p>
+        <p><strong>اولویت:</strong> @Model.Ticket.Priority.GetDisplayName()</p>
+        <hr />
+        <p>@Model.Ticket.Description</p>
+    </div>
+</div>
+
+<!-- بخش نمایش پاسخ‌ها -->
+<h3 class="mt-4">پاسخ‌ها</h3>
+@foreach (var reply in Model.Replies)
+{
+    <div class="card mb-3">
+        <div class="card-header">
+            پاسخ از طرف: @reply.UserEmail در تاریخ @reply.CreatedAt.ToShortDateString()
+        </div>
+        <div class="card-body">
+            @reply.Message
+        </div>
+    </div>
+}
+
+<!-- فرم ارسال پاسخ جدید -->
+<hr />
+<h4>ارسال پاسخ جدید</h4>
+<form asp-action="AddReply" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="TicketId" />
+    <div class="form-group mb-3">
+        <textarea asp-for="NewReplyMessage" class="form-control" rows="5"></textarea>
+        <span asp-validation-for="NewReplyMessage" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="ارسال پاسخ" class="btn btn-primary" />
+    </div>
+</form>

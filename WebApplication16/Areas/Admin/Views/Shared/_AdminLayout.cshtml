@@ -25,7 +25,8 @@
     <!-- Custom CSS -->
     @* <link href="../../dist/css/style.min.css" rel="stylesheet"> *@
     <link href="~/admin-theme/css/style.css" rel="stylesheet" />
-
+    <!-- ... toastr ... -->
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css](https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css)" />
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -406,28 +407,11 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body">
+@* 
                                 <h4 class="card-title">File export</h4>
                                 <h6 class="card-subtitle">Exporting data from a table can often be a key part of a complex application. The Buttons extension for DataTables provides three plug-ins that provide overlapping functionality for data export.  You can refer full documentation from here <a href="https://datatables.net/">Datatables</a></h6>
-                                <main id="main" class="main">
-
-                                    @if (TempData["SuccessMessage"] != null)
-                                    {
-                                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                            @TempData["SuccessMessage"]
-                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                        </div>
-                                    }
-                                    @if (TempData["ErrorMessage"] != null)
-                                    {
-                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                            @TempData["ErrorMessage"]
-                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                        </div>
-                                    }
-
-                                    @RenderBody()
-                                </main><!-- End #main -->
-                               @*  @RenderBody() *@
+                                *@
+                                @RenderBody()
 
                             </div>
                         </div>
@@ -815,6 +799,33 @@
 
 
     <script src="~/admin-theme/js/jquery.min.js"></script>
+    <!-- ... toastr.min.js ... -->
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js](https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js)"></script>
+    <script>
+        // پیکربندی اولیه Toastr برای نمایش پیام‌ها به زبان فارسی و در موقعیت مناسب
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-left", // موقعیت در بالا-چپ
+            "rtl": true
+        };
+
+        // این بخش بعد از بارگذاری کامل صفحه اجرا می‌شود
+        $(document).ready(function () {
+            // خواندن پیام از TempData که توسط Razor در یک متغیر جاوا اسکریپت قرار داده شده
+            var successMessage = '@(TempData["SuccessMessage"])';
+            var errorMessage = '@(TempData["ErrorMessage"])';
+
+            if (successMessage) {
+                toastr.success(successMessage);
+            }
+            if (errorMessage) {
+                toastr.error(errorMessage);
+            }
+        });
+    </script>
+   
+-------------
     <!-- Bootstrap tether Core JavaScript -->
     @* <script src="../../assets/libs/popper.js/dist/umd/popper.min.js"></script> *@
     @* <script src="~/admin-theme/js/popper.min.js"></script> *@

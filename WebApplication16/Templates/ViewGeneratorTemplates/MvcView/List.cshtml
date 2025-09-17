@@ -1,0 +1,80 @@
+﻿@inherits Microsoft.VisualStudio.Web.CodeGeneration.Templating.RazorTemplateBase
+@using Microsoft.VisualStudio.Web.CodeGeneration.EntityFrameworkCore
+@using System.Collections.Generic
+@using System.Linq
+@@model IEnumerable<@Model.ModelTypeName>
+
+@{
+    var pluralModelName = Model.ViewDataTypeShortName;
+    if (pluralModelName.Length > 0 && pluralModelName.Last() != 's')
+    {
+        pluralModelName += "s";
+    }
+}
+    @@{
+    ViewData["Title"] = "لیست @pluralModelName";
+    }
+
+    <div class="pagetitle">
+        <h1>@@ViewData["Title"]</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-action="Index">خانه</a></li>
+                <li class="breadcrumb-item active">@@ViewData["Title"]</li>
+            </ol>
+        </nav>
+    </div><!-- End Page Title -->
+
+    <p>
+        <a asp-action="Create" class="btn btn-primary">ایجاد مورد جدید</a>
+    </p>
+
+    <section class="section">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@@ViewData["Title"]</h5>
+
+                        <table class="table datatable">
+                            <thead>
+                                <tr>
+                                    @foreach (var property in Model.ModelMetadata.Properties)
+                                    {
+                                        if (property.Scaffold && !property.IsPrimaryKey && !property.IsForeignKey)
+                                        {
+                                            <th>
+                                                @@Html.DisplayNameFor(model => model.@property.PropertyName)
+                                            </th>
+                                        }
+                                    }
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @("@foreach (var item in Model)")
+                                @("{")
+                                <tr>
+                                    @foreach (var property in Model.ModelMetadata.Properties)
+                                    {
+                                        if (property.Scaffold && !property.IsPrimaryKey && !property.IsForeignKey)
+                                        {
+                                            <td>
+                                                @@Html.DisplayFor(modelItem => item.@property.PropertyName)
+                                            </td>
+                                        }
+                                    }
+                                    <td>
+                                        <a asp-action="Edit" asp-route-id="@("@item." + Model.PrimaryKeyName)" class="btn btn-sm btn-warning">ویرایش</a> |
+                                        <a asp-action="Details" asp-route-id="@("@item." + Model.PrimaryKeyName)" class="btn btn-sm btn-info">جزئیات</a> |
+                                        <a asp-action="Delete" asp-route-id="@("@item." + Model.PrimaryKeyName)" class="btn btn-sm btn-danger">حذف</a>
+                                    </td>
+                                </tr>
+                                @("}")
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>

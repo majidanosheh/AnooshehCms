@@ -5,6 +5,7 @@ using WebApplication16.Constants;
 using WebApplication16.Services;
 
 
+
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("WebApplication16ContextConnection") ?? throw new InvalidOperationException("Connection string 'WebApplication16ContextConnection' not found.");
 
@@ -18,12 +19,23 @@ builder.Services.AddMemoryCache();
 // این برای سرویس تنظیمات که حالت سراسری دارد و به کش دسترسی پیدا می‌کند، بهترین و بهینه‌ترین انتخاب است.
 // در مقابل، Scoped (یک نمونه به ازای هر درخواست وب) یا Transient (یک نمونه جدید در هر بار تزریق) برای این سناریو مناسب نیستند.
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
-
+builder.Services.AddScoped<INotificationService, EmailNotificationService>();
 //builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<WebApplication16Context>();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddRoles<IdentityRole>() // <<-- این خط برای حل مشکل اضافه شد
-    .AddEntityFrameworkStores<WebApplication16Context>();
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = true;
+})
+.AddRoles<IdentityRole>()
+.AddEntityFrameworkStores<WebApplication16Context>();
+
+// --- این خط جدید و بسیار مهم است ---
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+{
+    // کاهش فاصله زمانی به ۱ دقیقه
+    options.ValidationInterval = TimeSpan.FromMinutes(1);
+});
+builder.Services.AddScoped<IMenuService, MenuService>();
 
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
@@ -79,32 +91,57 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
-//۱. مسیر Admin Area (بالاترین اولویت)
+
+// ۱. مسیر Admin Area (بالاترین اولویت)
 app.MapControllerRoute(
     name: "AdminArea",
     pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
 
-// ۲. مسیرهای مشخص وبلاگ (اولویت دوم)
+// ۲. مسیرهای مشخص وبلاگ
 app.MapControllerRoute(
     name: "Blog",
     pattern: "blog/{action=Index}/{slug?}",
     defaults: new { controller = "Blog" });
 
-// ۳. مسیر داینامیک صفحات (اولویت سوم)
-// اگر این مسیر قبل از وبلاگ باشد، درخواست "/blog" را به عنوان یک اسلاگ صفحه در نظر می‌گیرد و خطای 404 می‌دهد.
+// ۳. مسیر پیش‌فرض (باید قبل از مسیر صفحات باشد)
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// ۴. مسیر داینامیک صفحات (پایین‌ترین اولویت)
 app.MapControllerRoute(
     name: "Page",
     pattern: "{slug}",
     defaults: new { controller = "Page", action = "Display" });
 
-// ۴. مسیر پیش‌فرض (پایین‌ترین اولویت)
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-// ...
+//---------------------------------------------------------------------------------
+////۱. مسیر Admin Area (بالاترین اولویت)
+//app.MapControllerRoute(
+//    name: "AdminArea",
+//    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
+
+//// ۲. مسیرهای مشخص وبلاگ (اولویت دوم)
+//app.MapControllerRoute(
+//    name: "Blog",
+//    pattern: "blog/{action=Index}/{slug?}",
+//    defaults: new { controller = "Blog" });
+
+//// ۳. مسیر داینامیک صفحات (اولویت سوم)
+//// اگر این مسیر قبل از وبلاگ باشد، درخواست "/blog" را به عنوان یک اسلاگ صفحه در نظر می‌گیرد و خطای 404 می‌دهد.
+//app.MapControllerRoute(
+//    name: "Page",
+//    pattern: "{slug}",
+//    defaults: new { controller = "Page", action = "Display" });
+
+//// ۴. مسیر پیش‌فرض (پایین‌ترین اولویت)
+//app.MapControllerRoute(
+//    name: "default",
+//    pattern: "{controller=Home}/{action=Index}/{id?}");
+//// ...
 
 //app.MapControllerRoute(
 //    name: "default",
 //    pattern: "{controller=Home}/{action=Index}/{id?}");
+//---------------------------------------------------------------------------------
 
 app.Run();

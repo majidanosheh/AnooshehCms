@@ -35,6 +35,10 @@
         {
             public const string View = "Permissions.AuditLogs.View";
         }
+        public static class Settings
+        {
+            public const string Manage = "Permissions.Settings.Manage";
+        }
 
         public static class Blog
         {
@@ -44,6 +48,22 @@
             public const string DeletePosts = "Permissions.Blog.DeletePosts";
             public const string ManageCategories = "Permissions.Blog.ManageCategories";
             public const string ManageTags = "Permissions.Blog.ManageTags";
+        }
+
+        public static class Roles
+        {
+            public const string View = "Permissions.Roles.View";
+            public const string Create = "Permissions.Roles.Create";
+            public const string Edit = "Permissions.Roles.Edit";
+            public const string Delete = "Permissions.Roles.Delete";
+        }
+
+        public static class Tickets
+        {
+            public const string View = "Permissions.Tickets.View";
+            public const string Create = "Permissions.Roles.Create";
+            public const string Edit = "Permissions.Roles.Edit";
+            public const string Delete = "Permissions.Roles.Delete";
         }
     }
 }

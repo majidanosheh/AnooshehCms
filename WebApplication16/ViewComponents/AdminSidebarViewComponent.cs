@@ -1,37 +1,23 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using WebApplication16.Areas.Identity.DataAccess;
+using WebApplication16.Services;
+
 
 namespace WebApplication16.ViewComponents
 {
     public class AdminSidebarViewComponent : ViewComponent
     {
-        private readonly WebApplication16Context _context;
+        private readonly IMenuService _menuService;
 
-        public AdminSidebarViewComponent(WebApplication16Context context)
+        public AdminSidebarViewComponent(IMenuService menuService)
         {
-            _context = context;
+            _menuService = menuService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            // ما به دنبال منویی با نام مشخص "AdminSidebarMenu" می‌گردیم
-            var menu = await _context.Menus
-                .Include(m => m.MenuItems)
-                    .ThenInclude(mi => mi.SubMenuItems)
-                .FirstOrDefaultAsync(m => m.Name == "AdminSidebarMenu");
-
-            if (menu == null)
-            {
-                return Content(string.Empty); // اگر منو وجود نداشت، چیزی نمایش نده
-            }
-
-            var topLevelItems = menu.MenuItems
-                                    .Where(mi => mi.ParentMenuItemId == null)
-                                    .OrderBy(mi => mi.Order)
-                                    .ToList();
-
-            return View(topLevelItems);
+            // تمام منطق پیچیده حالا در سرویس قرار دارد
+            var menuItems = await _menuService.GetAdminSidebarAsync(UserClaimsPrincipal);
+            return View(menuItems);
         }
     }
 }

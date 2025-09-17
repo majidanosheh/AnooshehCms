@@ -18,8 +18,13 @@ namespace WebApplication16.ViewModels
         [Display(Name = "باز شدن در تب جدید")]
         public bool OpenInNewTab { get; set; }
         public int MenuId { get; set; } // برای بازگشت به صفحه صحیح
-
+        public string? IconClass { get; set; }
         [Display(Name = "آیتم والد (برای ساخت زیرمنو)")]
         public int? ParentMenuItemId { get; set; }
+
+        [Display(Name = "مجوز مورد نیاز")]
+        public string? RequiredPermission { get; set; }
+        public List<MenuItemViewModel> SubItems { get; set; } = new List<MenuItemViewModel>();
+
     }
 }

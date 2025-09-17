@@ -5,7 +5,7 @@ using System.Linq.Dynamic.Core;
 using WebApplication16.Areas.Identity.DataAccess;
 using WebApplication16.Models;
 
-namespace YourCmsName.Areas.Admin.Controllers
+namespace WebApplication16.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [Authorize]

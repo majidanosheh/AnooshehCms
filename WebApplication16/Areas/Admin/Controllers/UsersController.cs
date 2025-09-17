@@ -27,6 +27,33 @@ namespace WebApplication16.Web.Areas.Admin.Controllers
             var users = await _userManager.Users.ToListAsync();
             return View(users);
         }
+        // GET: Admin/Users/Create
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: Admin/Users/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreateUserViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = new IdentityUser { UserName = model.Email, Email = model.Email, EmailConfirmed = true };
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
+                {
+                    TempData["SuccessMessage"] = "کاربر با موفقیت ایجاد شد.";
+                    return RedirectToAction(nameof(Index));
+                }
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+            return View(model);
+        }
 
         // GET: Admin/Users/ManageRoles?userId=...
         [HttpGet]

@@ -1,35 +1,34 @@
-﻿@model List<WebApplication16.Models.MenuItem>
+﻿@model List<WebApplication16.ViewModels.MenuItemViewModel>
 
 @foreach (var item in Model)
 {
-    // اگر آیتم دارای زیرمجموعه باشد، آن را به عنوان یک منوی بازشونده نمایش می‌دهیم
-    if (item.SubMenuItems.Any())
-    {
-        <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-target="#nav-@item.Id" data-bs-toggle="collapse" href="#">
-                <i class="bi bi-menu-button-wide"></i> @* آیکون پیش‌فرض برای والد *@
-                <span>@item.Title</span>
-                <i class="bi bi-chevron-down ms-auto"></i>
-            </a>
-            <ul id="nav-@item.Id" class="nav-content collapse" data-bs-parent="#sidebar-nav">
-                @* فراخوانی بازگشتی برای نمایش فرزندان *@
-                <partial name="_MenuItemPartial" model="item.SubMenuItems.OrderBy(si => si.Order).ToList()" />
-            </ul>
-        </li>
-    }
     // اگر آیتم یک تیتر جداکننده باشد
-    else if (item.Url == "#heading")
+    if (item.Url == "#heading")
     {
         <li class="nav-heading">@item.Title</li>
+    }
+    // اگر آیتم دارای زیرمجموعه باشد، آن را به عنوان یک منوی بازشونده نمایش می‌دهیم
+    else if (item.SubItems.Any())
+    {
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#nav-@item.Title.Replace(" ", "")" data-bs-toggle="collapse" href="#">
+                <i class="@item.IconClass"></i><span>@item.Title</span><i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="nav-@item.Title.Replace(" ", "")" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+                <partial name="_MenuItemPartial" model="item.SubItems" />
+            </ul>
+        </li>
     }
     // در غیر این صورت، یک لینک ساده نمایش می‌دهیم
     else
     {
-        // اصلاح شده: آیتم‌های ساده (چه سطح بالا و چه زیرمجموعه) باید ساختار صحیح داشته باشند
-        // آیتم‌های زیرمجموعه در NiceAdmin باید داخل تگ <li> باشند
-        <li>
-            <a href="@item.Url">
-                <i class="bi bi-circle"></i> @* آیکون پیش‌فرض برای فرزند *@
+        <li class="nav-item">
+            @* نکته کلیدی: ما تگ کمکی asp-area را حذف کردیم.
+            چون item.Url از قبل شامل آدرس کامل (مانند /Admin/Pages) است،
+            نیازی به استفاده از Tag Helpers برای ساختن دوباره آن نداریم و فقط از href استفاده می‌کنیم.
+            *@
+            <a class="nav-link" href="@item.Url">
+                <i class="@item.IconClass"></i>
                 <span>@item.Title</span>
             </a>
         </li>

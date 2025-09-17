@@ -1,0 +1,32 @@
+﻿@using WebApplication16.Enums
+@using WebApplication16.ViewModels
+@model TicketCreateViewModel
+
+@{
+    ViewData["Title"] = "ثبت تیکت جدید";
+}
+
+<h1>@ViewData["Title"]</h1>
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    @* این خط جدید و بسیار مهم، خطاهای سطح مدل را نمایش می‌دهد *@
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Title"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="form-group mb-3">
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="form-group mb-3">
+        <label asp-for="Priority"></label>
+        <select asp-for="Priority" asp-items="Html.GetEnumSelectList<TicketPriority>()" class="form-control"></select>
+        <span asp-validation-for="Priority" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">ثبت تیکت</button>
+</form>

@@ -14,7 +14,15 @@ namespace WebApplication16.Areas.Admin.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<IdentityUser> _userManager;
 
-        public RolesController(RoleManager<IdentityRole> roleManager) => _roleManager = roleManager;
+
+        //public RolesController(RoleManager<IdentityRole> roleManager) => _roleManager = roleManager;
+
+        public RolesController(RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager) // اضافه کردن پارامتر
+        {
+            _roleManager = roleManager;
+            _userManager = userManager; // مقداردهی
+        }
+
 
         // GET: Admin/Roles
         public async Task<IActionResult> Index()
@@ -22,7 +30,30 @@ namespace WebApplication16.Areas.Admin.Controllers
             var roles = await _roleManager.Roles.ToListAsync();
             return View(roles);
         }
+        // GET: Admin/Roles/Create
+        public IActionResult Create()
+        {
+            return View();
+        }
 
+        // POST: Admin/Roles/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(IdentityRole role)
+        {
+            if (ModelState.IsValid)
+            {
+                // بررسی می‌کنیم که آیا نقشی با این نام از قبل وجود دارد یا خیر
+                if (!await _roleManager.RoleExistsAsync(role.Name))
+                {
+                    await _roleManager.CreateAsync(new IdentityRole(role.Name));
+                    TempData["SuccessMessage"] = "نقش با موفقیت ایجاد شد.";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("Name", "نقشی با این نام از قبل وجود دارد.");
+            }
+            return View(role);
+        }
         // GET: Admin/Roles/ManagePermissions?roleId=...
         [HttpGet]
         public async Task<IActionResult> ManagePermissions(string roleId)
@@ -80,8 +111,20 @@ namespace WebApplication16.Areas.Admin.Controllers
                 await _roleManager.AddClaimAsync(role, new System.Security.Claims.Claim("Permission", roleClaim.Value));
             }
 
+            // --- این بخش جدید و بسیار مهم است ---
+            // به‌روزرسانی Security Stamp تمام کاربران عضو این نقش
+            var usersInRole = await _userManager.GetUsersInRoleAsync(role.Name);
+            foreach (var user in usersInRole)
+            {
+                await _userManager.UpdateSecurityStampAsync(user);
+            }
+            // --- پایان بخش جدید ---
+
+            TempData["SuccessMessage"] = "مجوزها با موفقیت به‌روزرسانی شدند.";
             return RedirectToAction(nameof(Index));
         }
+
+
         // GET: Admin/Users/ManageRoles?userId=...
         [HttpGet]
         [Authorize(Policy = Permissions.Users.ManageRoles)]

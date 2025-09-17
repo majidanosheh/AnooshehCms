@@ -1,0 +1,31 @@
+﻿@model IEnumerable<Ticket>
+@using WebApplication16.Extensions
+
+@{
+    ViewData["Title"] = "تیکت‌های من";
+}
+
+<h1>@ViewData["Title"]</h1>
+<a asp-action="Create" class="btn btn-primary mb-3">ثبت تیکت جدید</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>عنوان</th>
+            <th>وضعیت</th>
+            <th>تاریخ ایجاد</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Title</td>
+                <td>@item.Status.GetDisplayName()</td>
+                <td>@item.CreatedAt.ToShortDateString()</td>
+                <td><a asp-action="Details" asp-route-id="@item.Id">مشاهده</a></td>
+            </tr>
+        }
+    </tbody>
+</table>

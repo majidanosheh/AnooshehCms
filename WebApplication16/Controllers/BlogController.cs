@@ -5,7 +5,7 @@ using WebApplication16.Models;
 using WebApplication16.ViewModels;
  // اطمینان از وجود using برای PaginatedList
 
-namespace YourCmsName.Controllers
+namespace WebApplication16.Controllers
 {
     public class BlogController : Controller
     {
