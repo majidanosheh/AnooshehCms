@@ -41,6 +41,7 @@ namespace WebApplication16.Areas.Identity.DataAccess
         public DbSet<FormField> FormFields { get; set; }
         public DbSet<FormSubmission> FormSubmissions { get; set; }
         public DbSet<FormSubmissionData> FormSubmissionData { get; set; }
+
         #endregion
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -74,6 +75,30 @@ namespace WebApplication16.Areas.Identity.DataAccess
                 .WithMany()
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict); // جلوگیری از حذف آبشاری
+
+            builder.Entity<Form>(entity =>
+            {
+                // تعریف رابطه یک-به-چند: هر فرم می‌تواند چندین فیلد داشته باشد
+                entity.HasMany(f => f.FormFields)
+                      .WithOne(ff => ff.Form)
+                      .HasForeignKey(ff => ff.FormId)
+                      .OnDelete(DeleteBehavior.Cascade); // اگر فرم حذف شد، فیلدهای آن هم حذف شوند
+
+                // تعریف رابطه یک-به-چند: هر فرم می‌تواند چندین ورودی داشته باشد
+                entity.HasMany(f => f.Submissions)
+                      .WithOne(fs => fs.Form)
+                      .HasForeignKey(fs => fs.FormId)
+                      .OnDelete(DeleteBehavior.Cascade); // اگر فرم حذف شد، ورودی‌های آن هم حذف شوند
+            });
+
+            builder.Entity<FormSubmission>(entity =>
+            {
+                // تعریف رابطه یک-به-چند: هر ورودی فرم، چندین داده فیلد دارد
+                entity.HasMany(fs => fs.SubmissionData)
+                      .WithOne(fsd => fsd.FormSubmission)
+                      .HasForeignKey(fsd => fsd.FormSubmissionId)
+                      .OnDelete(DeleteBehavior.Cascade); // اگر ورودی حذف شد، داده‌های آن هم حذف شوند
+            });
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

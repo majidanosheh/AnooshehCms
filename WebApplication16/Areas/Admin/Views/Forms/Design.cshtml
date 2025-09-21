@@ -1,0 +1,273 @@
+﻿@using WebApplication16.Enums
+@model Form
+
+@{
+    ViewData["Title"] = "طراحی فرم: " + Model.Name;
+}
+
+<!-- استایل‌های لازم برای نمایش بهتر -->
+<style>
+    #field-palette .list-group-item {
+        cursor: grab;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+
+    #form-canvas {
+        min-height: 400px;
+        background-color: #ffffff;
+        border: 2px dashed #ced4da;
+        padding: 10px;
+    }
+
+        #form-canvas .list-group-item {
+            cursor: move;
+        }
+
+            #form-canvas .list-group-item .field-actions {
+                opacity: 0;
+                transition: opacity 0.2s ease-in-out;
+            }
+
+            #form-canvas .list-group-item:hover .field-actions {
+                opacity: 1;
+            }
+</style>
+
+<div class="pagetitle">
+    <h1>@ViewData["Title"]</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index" asp-controller="Dashboard">داشبورد</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">مدیریت فرم‌ها</a></li>
+            <li class="breadcrumb-item active">طراحی فرم</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- توکن برای امنیت درخواست های AJAX در یک فرم پنهان قرار می گیرد -->
+<form id="antiForgeryForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<section class="section">
+    <div class="row">
+        <!-- ستون اول: پالت فیلدها -->
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">فیلدهای موجود</h5>
+                    <p class="small">فیلد مورد نظر را بکشید و در ستون کناری رها کنید.</p>
+                    <div id="field-palette" class="list-group">
+                        <div class="list-group-item" data-field-type="@FieldType.Text"><i class="bi bi-fonts me-2"></i>فیلد متنی</div>
+                        <div class="list-group-item" data-field-type="@FieldType.TextArea"><i class="bi bi-textarea-t me-2"></i>متن بلند</div>
+                        <div class="list-group-item" data-field-type="@FieldType.Number"><i class="bi bi-hash me-2"></i>عدد</div>
+                        <div class="list-group-item" data-field-type="@FieldType.Email"><i class="bi bi-at me-2"></i>ایمیل</div>
+                        <!-- انواع فیلدهای دیگر در آینده اینجا اضافه می شوند -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ستون دوم: بوم طراحی فرم -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">پیش‌نمایش فرم</h5>
+                    <div id="form-canvas" class="list-group">
+                        <!-- فیلدهای فرم که از قبل ذخیره شده اند، اینجا بارگذاری می شوند -->
+                        @foreach (var field in Model.FormFields.OrderBy(f => f.Order))
+                        {
+                            <partial name="_FormFieldItem" model="field" />
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal برای ویرایش فیلد -->
+<div class="modal fade" id="editFieldModal" tabindex="-1" aria-labelledby="editFieldModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editFieldModalLabel">ویرایش فیلد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editFieldId" />
+                <div class="mb-3">
+                    <label for="editFieldLabel" class="form-label">عنوان فیلد</label>
+                    <input type="text" class="form-control" id="editFieldLabel">
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="editFieldIsRequired">
+                    <label class="form-check-label" for="editFieldIsRequired">
+                        این فیلد الزامی است
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" id="saveFieldChanges">ذخیره تغییرات</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const formId = @Model.Id;
+            const fieldPalette = document.getElementById('field-palette');
+            const formCanvas = document.getElementById('form-canvas');
+            const editModal = new bootstrap.Modal(document.getElementById('editFieldModal'));
+
+            // --- تابع برای گرفتن توکن امنیتی ---
+            function getVerificationToken() {
+                return document.querySelector('input[name="__RequestVerificationToken"]').value;
+            }
+
+            // --- فعال سازی قابلیت Drag & Drop ---
+            new Sortable(fieldPalette, {
+                group: { name: 'shared', pull: 'clone', put: false },
+                sort: false,
+                animation: 150
+            });
+
+            new Sortable(formCanvas, {
+                group: 'shared',
+                animation: 150,
+                handle: '.drag-handle',
+                onAdd: async function (evt) {
+                    const itemEl = evt.item;
+                    const fieldType = itemEl.dataset.fieldType;
+
+                    const formData = new FormData();
+                    formData.append('formId', formId);
+                    formData.append('fieldType', fieldType);
+                    formData.append('__RequestVerificationToken', getVerificationToken());
+
+                    const response = await fetch('@Url.Action("AddFieldToForm", "Forms")', { method: 'POST', body: formData });
+
+                    if (response.ok) {
+                        const newFieldHtml = await response.text();
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = newFieldHtml;
+                        itemEl.replaceWith(tempDiv.firstChild);
+                        toastr.success('فیلد با موفقیت اضافه شد.');
+                    } else {
+                        itemEl.remove();
+                        toastr.error('خطا در افزودن فیلد.');
+                    }
+                },
+                onEnd: async function (evt) {
+                    const fieldItems = formCanvas.querySelectorAll('.list-group-item');
+                    const fieldIds = Array.from(fieldItems).map(item => parseInt(item.dataset.fieldId));
+
+                    // ارسال داده ها با FormData
+                    const formData = new FormData();
+                    formData.append('formId', formId);
+                    // برای ارسال لیست، باید برای هر آیتم یک کلید مجزا ساخت
+                    for (let i = 0; i < fieldIds.length; i++) {
+                        formData.append(`fieldIds[${i}]`, fieldIds[i]);
+                    }
+                    formData.append('__RequestVerificationToken', getVerificationToken());
+
+                    const response = await fetch('@Url.Action("UpdateFieldOrder", "Forms")', { method: 'POST', body: formData });
+
+                    if (response.ok) {
+                        toastr.success('ترتیب فیلدها ذخیره شد.');
+                    } else {
+                        toastr.error('خطا در ذخیره ترتیب فیلدها.');
+                        Swal.fire('خطا!', 'ترتیب جدید ذخیره نشد. لطفاً صفحه را رفرش کنید.', 'error');
+                    }
+                }
+            });
+
+            // --- مدیریت رویدادهای کلیک ---
+            formCanvas.addEventListener('click', async function (e) {
+                const editButton = e.target.closest('.edit-field-btn');
+                const deleteButton = e.target.closest('.delete-field-btn');
+
+                if (editButton) {
+                    e.preventDefault();
+                    const fieldId = editButton.dataset.fieldId;
+                    const response = await fetch(`@Url.Action("GetField", "Forms")/${fieldId}`);
+                    if(response.ok) {
+                        const fieldData = await response.json();
+                        document.getElementById('editFieldId').value = fieldData.id;
+                        document.getElementById('editFieldLabel').value = fieldData.label;
+                        document.getElementById('editFieldIsRequired').checked = fieldData.isRequired;
+                        editModal.show();
+                    } else {
+                         toastr.error('خطا در دریافت اطلاعات فیلد.');
+                    }
+                }
+
+                if (deleteButton) {
+                    e.preventDefault();
+                    const fieldId = deleteButton.dataset.fieldId;
+
+                    Swal.fire({
+                        title: 'آیا مطمئن هستید؟', text: "این عملیات غیرقابل بازگشت است!", icon: 'warning',
+                        showCancelButton: true, confirmButtonColor: '#3085d6', cancelButtonColor: '#d33',
+                        confirmButtonText: 'بله، حذف کن!', cancelButtonText: 'انصراف'
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                             const formData = new FormData();
+                             formData.append('id', fieldId);
+                             formData.append('__RequestVerificationToken', getVerificationToken());
+
+                             const response = await fetch('@Url.Action("DeleteField", "Forms")', { method: 'POST', body: formData });
+                             if(response.ok) {
+                                deleteButton.closest('.list-group-item').remove();
+                                Swal.fire('حذف شد!', 'فیلد مورد نظر با موفقیت حذف شد.', 'success');
+                             } else {
+                                Swal.fire('خطا!', 'در هنگام حذف مشکلی رخ داد.', 'error');
+                             }
+                        }
+                    })
+                }
+            });
+
+            document.getElementById('saveFieldChanges').addEventListener('click', async function() {
+                const fieldId = document.getElementById('editFieldId').value;
+                const updatedData = {
+                    Id: parseInt(fieldId),
+                    Label: document.getElementById('editFieldLabel').value,
+                    IsRequired: document.getElementById('editFieldIsRequired').checked
+                };
+
+                const response = await fetch(`@Url.Action("UpdateField", "Forms")/${fieldId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getVerificationToken()
+                    },
+                    body: JSON.stringify(updatedData)
+                });
+
+                if (response.ok) {
+                    const newFieldHtml = await response.text();
+                    const oldFieldElement = document.querySelector(`.list-group-item[data-field-id='${fieldId}']`);
+                    if (oldFieldElement) {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = newFieldHtml;
+                        oldFieldElement.replaceWith(tempDiv.firstChild);
+                    }
+                    editModal.hide();
+                    toastr.success('فیلد با موفقیت ویرایش شد.');
+                } else {
+                    toastr.error('خطا در ویرایش فیلد.');
+                }
+            });
+        });
+    </script>
+}
+

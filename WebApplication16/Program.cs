@@ -1,10 +1,12 @@
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebApplication16.Areas.Identity.DataAccess;
 using WebApplication16.Constants;
 using WebApplication16.Services;
 
-
+// using های جدید برای سرویس های فرم ساز
+using WebApplication16.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("WebApplication16ContextConnection") ?? throw new InvalidOperationException("Connection string 'WebApplication16ContextConnection' not found.");
@@ -14,13 +16,8 @@ builder.Services.AddDbContext<WebApplication16Context>(options => options.UseSql
 builder.Services.AddMemoryCache();
 
 // ثبت سرویس تنظیمات به صورت Singleton
-// توضیح عمیق‌تر Lifetime:
-// Singleton یعنی فقط یک نمونه از SettingsService در طول کل عمر برنامه ساخته می‌شود و بین تمام درخواست‌ها مشترک است.
-// این برای سرویس تنظیمات که حالت سراسری دارد و به کش دسترسی پیدا می‌کند، بهترین و بهینه‌ترین انتخاب است.
-// در مقابل، Scoped (یک نمونه به ازای هر درخواست وب) یا Transient (یک نمونه جدید در هر بار تزریق) برای این سناریو مناسب نیستند.
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddScoped<INotificationService, EmailNotificationService>();
-//builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<WebApplication16Context>();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
@@ -38,6 +35,15 @@ builder.Services.Configure<SecurityStampValidatorOptions>(options =>
 builder.Services.AddScoped<IMenuService, MenuService>();
 
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
+// ==========================================================
+// START: اضافه کردن سرویس های فرم ساز
+// ==========================================================
+builder.Services.AddScoped<IFormService, FormService>();
+builder.Services.AddScoped<IFormFieldService, FormFieldService>();
+// ==========================================================
+// END: اضافه کردن سرویس های فرم ساز
+// ==========================================================
 
 builder.Services.AddAuthorization(options =>
 {
@@ -81,7 +87,7 @@ else
     // به جای آن، او را به صفحه خطای زیبای خودمان هدایت می‌کنیم.
     app.UseExceptionHandler("/Home/Error");
 
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see [https://aka.ms/aspnetcore-hsts](https://aka.ms/aspnetcore-hsts).
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 app.MapRazorPages();
@@ -114,34 +120,6 @@ app.MapControllerRoute(
     pattern: "{slug}",
     defaults: new { controller = "Page", action = "Display" });
 
-//---------------------------------------------------------------------------------
-////۱. مسیر Admin Area (بالاترین اولویت)
-//app.MapControllerRoute(
-//    name: "AdminArea",
-//    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
-
-//// ۲. مسیرهای مشخص وبلاگ (اولویت دوم)
-//app.MapControllerRoute(
-//    name: "Blog",
-//    pattern: "blog/{action=Index}/{slug?}",
-//    defaults: new { controller = "Blog" });
-
-//// ۳. مسیر داینامیک صفحات (اولویت سوم)
-//// اگر این مسیر قبل از وبلاگ باشد، درخواست "/blog" را به عنوان یک اسلاگ صفحه در نظر می‌گیرد و خطای 404 می‌دهد.
-//app.MapControllerRoute(
-//    name: "Page",
-//    pattern: "{slug}",
-//    defaults: new { controller = "Page", action = "Display" });
-
-//// ۴. مسیر پیش‌فرض (پایین‌ترین اولویت)
-//app.MapControllerRoute(
-//    name: "default",
-//    pattern: "{controller=Home}/{action=Index}/{id?}");
-//// ...
-
-//app.MapControllerRoute(
-//    name: "default",
-//    pattern: "{controller=Home}/{action=Index}/{id?}");
-//---------------------------------------------------------------------------------
 
 app.Run();
+

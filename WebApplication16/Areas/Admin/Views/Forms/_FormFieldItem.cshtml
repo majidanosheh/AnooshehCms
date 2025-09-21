@@ -1,0 +1,11 @@
+﻿@model FormField
+
+<div class="list-group-item" data-field-id="@Model.Id">
+    <i class="bi bi-grip-vertical"></i> <!-- آیکون برای Drag -->
+    <strong>@Model.Label</strong>
+    <small class="text-muted">(@Model.FieldType)</small>
+    <div class="float-end">
+        <a href="#" class="btn btn-sm btn-warning">ویرایش</a>
+        <a href="#" class="btn btn-sm btn-danger">حذف</a>
+    </div>
+</div>
