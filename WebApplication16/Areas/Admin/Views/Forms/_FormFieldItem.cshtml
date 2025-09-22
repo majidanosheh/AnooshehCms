@@ -1,11 +1,15 @@
 ﻿@model FormField
 
 <div class="list-group-item" data-field-id="@Model.Id">
-    <i class="bi bi-grip-vertical"></i> <!-- آیکون برای Drag -->
+    <i class="bi bi-grip-vertical handle" style="cursor: grab;"></i> <!-- آیکون برای Drag -->
     <strong>@Model.Label</strong>
     <small class="text-muted">(@Model.FieldType)</small>
+    @if (Model.IsRequired)
+    {
+        <span class="badge bg-danger">ضروری</span>
+    }
     <div class="float-end">
-        <a href="#" class="btn btn-sm btn-warning">ویرایش</a>
-        <a href="#" class="btn btn-sm btn-danger">حذف</a>
+        <button type="button" class="btn btn-sm btn-warning edit-field-btn" data-id="@Model.Id">ویرایش</button>
+        <button type="button" class="btn btn-sm btn-danger delete-field-btn" data-id="@Model.Id">حذف</button>
     </div>
 </div>

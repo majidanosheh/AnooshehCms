@@ -36,9 +36,9 @@
                             <td>@item.CreatedAt.ToShortDateString()</td>
                             <td>
                                 <a asp-action="Design" asp-route-id="@item.Id" class="btn btn-sm btn-success">طراحی</a>
-                                <a href="#" class="btn btn-sm btn-warning">ویرایش</a>
-                                <a href="#" class="btn btn-sm btn-info">مشاهده ارسال‌ها</a>
-                                <a href="#" class="btn btn-sm btn-danger">حذف</a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">ویرایش</a>
+                                <a asp-action="Submissions" asp-route-id="@item.Id" class="btn btn-sm btn-info">مشاهده ارسال‌ها</a> <!-- لینک اصلاح شد -->
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">حذف</a>
                             </td>
                         </tr>
                     }

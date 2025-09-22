@@ -8,6 +8,13 @@ namespace WebApplication16.Services
         Task<Form?> GetFormWithFieldsAsync(int formId);
         Task<Form> CreateFormAsync(Form form);
         // متدهای آپدیت و حذف در آینده اضافه خواهند شد
+
+        Task<Form> GetFormByIdAsync(int id);
+        Task<Form> GetFormByIdWithFieldsAsync(int id);
+        Task UpdateFormAsync(Form form);
+        Task DeleteFormAsync(int id);
+        Task<Form> GetFormBySlugAsync(string slug);
+        Task<Form> GetFormWithSubmissionsAsync(int id); // <-- متد جدید
     }
 }
 

@@ -20,5 +20,6 @@ namespace WebApplication16.Services.Interfaces
         /// دریافت جزئیات کامل یک داده ثبت شده خاص
         /// </summary>
         Task<FormSubmission> GetSubmissionDetailsAsync(int submissionId);
+        Task<bool> CreateSubmissionAsync(int formId, IFormCollection formData, string ipAddress);
     }
 }

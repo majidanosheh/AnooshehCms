@@ -1,0 +1,68 @@
+﻿@model WebApplication16.Models.Form
+
+@{
+    ViewData["Title"] = Model.Name;
+    Layout = "_Layout"; // از لی‌اوت اصلی سایت استفاده می‌کند
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>@Model.Name</h3>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <p class="card-text">@Model.Description</p>
+                    }
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+                    }
+
+                    <form asp-action="Submit" asp-controller="FormRenderer" asp-route-slug="@Model.Slug" method="post">
+                        @Html.AntiForgeryToken()
+
+                        @foreach (var field in Model.FormFields)
+                        {
+                            <div class="mb-3">
+                                <label for="field-@field.Id" class="form-label">
+                                    @field.Label
+                                    @if (field.IsRequired)
+                                    {
+                                        <span class="text-danger">*</span>
+                                    }
+                                </label>
+
+                                @switch (field.FieldType)
+                                {
+                                    case WebApplication16.Enums.FieldType.Text:
+                                        <input type="text" id="field-@field.Id" name="@field.Label" class="form-control" @(field.IsRequired ? "required" : "") />
+                                        break;
+                                    case WebApplication16.Enums.FieldType.TextArea:
+                                        <textarea id="field-@field.Id" name="@field.Label" class="form-control" rows="3" @(field.IsRequired ? "required" : "")></textarea>
+                                        break;
+                                    case WebApplication16.Enums.FieldType.Number:
+                                        <input type="number" id="field-@field.Id" name="@field.Label" class="form-control" @(field.IsRequired ? "required" : "") />
+                                        break;
+                                    case WebApplication16.Enums.FieldType.Email:
+                                        <input type="email" id="field-@field.Id" name="@field.Label" class="form-control" @(field.IsRequired ? "required" : "") />
+                                        break;
+                                }
+                            </div>
+                        }
+
+                        <button type="submit" class="btn btn-primary">ارسال</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
