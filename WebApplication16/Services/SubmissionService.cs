@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebApplication16.Areas.Identity.DataAccess;
 using WebApplication16.Models;
-using WebApplication16.Services.Interfaces;
+using WebApplication16.ViewModels;
 
 namespace WebApplication16.Services
 {
@@ -19,58 +18,240 @@ namespace WebApplication16.Services
             _context = context;
         }
 
-        public async Task<bool> CreateSubmissionAsync(int formId, IFormCollection formData, string ipAddress)
+        public async Task<SubmissionResult> CreateSubmissionAsync(int formId, IFormCollection formData, string? ipAddress)
         {
-            var form = await _context.Forms.FindAsync(formId);
-            if (form == null) return false;
+            var form = await _context.Forms.Include(f => f.FormFields).FirstOrDefaultAsync(f => f.Id == formId);
+            if (form == null)
+            {
+                return new SubmissionResult { Success = false, Errors = new List<string> { "فرم مورد نظر یافت نشد." } };
+            }
+
+            var errors = new List<string>();
+            var submissionData = new List<FormSubmissionData>();
+
+            foreach (var field in form.FormFields)
+            {
+                formData.TryGetValue(field.Name!, out var value);
+                string? submittedValue = value.ToString();
+
+                if (field.IsRequired && string.IsNullOrWhiteSpace(submittedValue))
+                {
+                    errors.Add($"فیلد '{field.Label}' الزامی است.");
+                }
+
+                submissionData.Add(new FormSubmissionData
+                {
+                    FieldName = field.Name!,
+                    FieldValue = submittedValue
+                });
+            }
+
+            if (errors.Any())
+            {
+                return new SubmissionResult { Success = false, Errors = errors };
+            }
 
             var submission = new FormSubmission
             {
                 FormId = formId,
                 IpAddress = ipAddress,
-                CreatedAt = DateTime.UtcNow
+                SubmissionData = submissionData
             };
 
             _context.FormSubmissions.Add(submission);
             await _context.SaveChangesAsync();
 
-            foreach (var key in formData.Keys.Where(k => k != "__RequestVerificationToken"))
-            {
-                var submissionData = new FormSubmissionData
-                {
-                    FormSubmissionId = submission.Id,
-                    FieldName = key,
-                    FieldValue = formData[key]
-                };
-                _context.FormSubmissionData.Add(submissionData);
-            }
-
-            await _context.SaveChangesAsync();
-            return true;
+            return new SubmissionResult { Success = true };
         }
 
-        // پیاده‌سازی متد جدید برای خواندن لیست ارسال‌ها
-        public async Task<IEnumerable<FormSubmission>> GetSubmissionsForFormAsync(int formId)
+        public async Task<IEnumerable<FormSubmission>> GetAllSubmissionsWithDataAsync(int formId)
         {
             return await _context.FormSubmissions
-                .Where(s => s.FormId == formId)
-                .OrderByDescending(s => s.CreatedAt)
-                .ToListAsync();
+               .Where(s => s.FormId == formId)
+               .Include(s => s.SubmissionData)
+               .OrderByDescending(s => s.CreatedAt)
+               .ToListAsync();
         }
 
-        // پیاده‌سازی متد جدید برای خواندن جزئیات یک ارسال
-        public async Task<FormSubmission> GetSubmissionDetailsAsync(int submissionId)
+        public async Task<FormSubmission?> GetSubmissionDetailsAsync(int submissionId)
         {
             return await _context.FormSubmissions
-                .Include(s => s.SubmissionData) // Join با جدول داده‌ها
-                .Include(s => s.Form)           // Join با جدول فرم برای نمایش نام فرم
+                .Include(s => s.SubmissionData)
                 .FirstOrDefaultAsync(s => s.Id == submissionId);
-        }
-
-        public Task<FormSubmission> CreateSubmissionAsync(FormSubmission submission)
-        {
-            throw new NotImplementedException();
         }
     }
 }
+
+
+
+//using Microsoft.EntityFrameworkCore;
+//using WebApplication16.Areas.Identity.DataAccess;
+//using WebApplication16.Models;
+//using WebApplication16.ViewModels;
+
+//namespace WebApplication16.Services
+//{
+//    public class SubmissionService : ISubmissionService
+//    {
+//        private readonly WebApplication16Context _context;
+
+//        public SubmissionService(WebApplication16Context context)
+//        {
+//            _context = context;
+//        }
+
+//        public async Task<SubmissionResult> CreateSubmissionAsync(int formId, Dictionary<string, string> formData, string? ipAddress)
+//        {
+//            var form = await _context.Forms
+//                .Include(f => f.FormFields)
+//                .AsNoTracking()
+//                .FirstOrDefaultAsync(f => f.Id == formId);
+
+//            if (form == null)
+//            {
+//                return SubmissionResult.Failed("فرم مورد نظر یافت نشد.");
+//            }
+
+//            var validationErrors = new List<string>();
+//            foreach (var field in form.FormFields)
+//            {
+//                if (field.IsRequired && (!formData.ContainsKey(field.Name) || string.IsNullOrWhiteSpace(formData[field.Name])))
+//                {
+//                    validationErrors.Add($"فیلد '{field.Label}' الزامی است.");
+//                }
+//            }
+
+//            if (validationErrors.Any())
+//            {
+//                return SubmissionResult.Failed(validationErrors.ToArray());
+//            }
+
+//            var submission = new FormSubmission
+//            {
+//                FormId = formId,
+//                IpAddress = ipAddress,
+//                CreatedAt = DateTime.UtcNow
+//            };
+
+//            foreach (var data in formData)
+//            {
+//                submission.SubmissionData.Add(new FormSubmissionData
+//                {
+//                    FieldName = data.Key,
+//                    FieldValue = data.Value
+//                });
+//            }
+
+//            _context.FormSubmissions.Add(submission);
+//            await _context.SaveChangesAsync();
+
+//            return SubmissionResult.Success();
+//        }
+
+//        public async Task<FormSubmission?> GetSubmissionByIdAsync(int submissionId)
+//        {
+//            return await _context.FormSubmissions
+//                .Include(s => s.SubmissionData)
+//                .Include(s => s.Form)
+//                .ThenInclude(f => f.FormFields)
+//                .AsNoTracking()
+//                .FirstOrDefaultAsync(s => s.Id == submissionId);
+//        }
+
+//        public async Task<IEnumerable<FormSubmission>> GetSubmissionsByFormIdAsync(int formId)
+//        {
+//            return await _context.FormSubmissions
+//                .Where(s => s.FormId == formId)
+//                .Include(s => s.SubmissionData)
+//                .AsNoTracking()
+//                .OrderByDescending(s => s.CreatedAt)
+//                .ToListAsync();
+//        }
+//    }
+//}
+
+
+
+////using Microsoft.EntityFrameworkCore;
+////using WebApplication16.Areas.Identity.DataAccess;
+////using WebApplication16.Models;
+////using WebApplication16.ViewModels;
+
+////namespace WebApplication16.Services
+////{
+////    public class SubmissionService : ISubmissionService
+////    {
+////        private readonly WebApplication16Context _context;
+
+////        public SubmissionService(WebApplication16Context context)
+////        {
+////            _context = context;
+////        }
+
+////        public async Task<SubmissionResult> CreateSubmissionAsync(int formId, Dictionary<string, string> formData, string? ipAddress)
+////        {
+////            var form = await _context.Forms
+////                .Include(f => f.FormFields)
+////                .FirstOrDefaultAsync(f => f.Id == formId);
+
+////            if (form == null)
+////            {
+////                return SubmissionResult.Failed("فرم مورد نظر یافت نشد.");
+////            }
+
+////            var validationErrors = new List<string>();
+////            foreach (var field in form.FormFields)
+////            {
+////                if (field.IsRequired && (!formData.ContainsKey(field.Name) || string.IsNullOrWhiteSpace(formData[field.Name])))
+////                {
+////                    validationErrors.Add($"فیلد '{field.Label}' الزامی است.");
+////                }
+////            }
+
+////            if (validationErrors.Any())
+////            {
+////                return SubmissionResult.Failed(validationErrors.ToArray());
+////            }
+
+////            var submission = new FormSubmission
+////            {
+////                FormId = formId,
+////                IpAddress = ipAddress,
+////                CreatedAt = DateTime.UtcNow // Use UtcNow for consistency
+////            };
+
+////            foreach (var data in formData)
+////            {
+////                submission.SubmissionData.Add(new FormSubmissionData
+////                {
+////                    FieldName = data.Key,
+////                    FieldValue = data.Value
+////                });
+////            }
+
+////            _context.FormSubmissions.Add(submission);
+////            await _context.SaveChangesAsync();
+
+////            return SubmissionResult.Success();
+////        }
+
+////        public async Task<FormSubmission?> GetSubmissionByIdAsync(int submissionId)
+////        {
+////            return await _context.FormSubmissions
+////                .Include(s => s.SubmissionData)
+////                .Include(s => s.Form)
+////                .ThenInclude(f => f.FormFields) // Load form fields as well
+////                .FirstOrDefaultAsync(s => s.Id == submissionId);
+////        }
+
+////        public async Task<IEnumerable<FormSubmission>> GetSubmissionsByFormIdAsync(int formId)
+////        {
+////            return await _context.FormSubmissions
+////                .Where(s => s.FormId == formId)
+////                .Include(s => s.SubmissionData)
+////                .OrderByDescending(s => s.CreatedAt)
+////                .ToListAsync();
+////        }
+////    }
+////}
 

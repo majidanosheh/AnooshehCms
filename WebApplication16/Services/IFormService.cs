@@ -5,18 +5,41 @@ namespace WebApplication16.Services
     public interface IFormService
     {
         Task<IEnumerable<Form>> GetAllFormsAsync();
-        Task<Form?> GetFormWithFieldsAsync(int formId);
+        Task<Form?> GetFormByIdAsync(int id);
+        Task<Form?> GetFormWithFieldsAsync(int id);
+        Task<Form?> GetFormWithSubmissionsAsync(int id);
         Task<Form> CreateFormAsync(Form form);
-        // متدهای آپدیت و حذف در آینده اضافه خواهند شد
-
-        Task<Form> GetFormByIdAsync(int id);
-        Task<Form> GetFormByIdWithFieldsAsync(int id);
         Task UpdateFormAsync(Form form);
         Task DeleteFormAsync(int id);
-        Task<Form> GetFormBySlugAsync(string slug);
-        Task<Form> GetFormWithSubmissionsAsync(int id); // <-- متد جدید
+        Task<Form?> GetFormBySlugWithFieldsAsync(string slug);
+        
     }
 }
+
+
+
+
+//using WebApplication16.Models;
+
+//namespace WebApplication16.Services
+//{
+//    public interface IFormService
+//    {
+//        Task<IEnumerable<Form>> GetAllFormsAsync();
+//        Task<Form?> GetFormWithFieldsAsync(int formId);
+//        Task<Form> CreateFormAsync(Form form);
+//        // متدهای آپدیت و حذف در آینده اضافه خواهند شد
+
+//        Task<Form> GetFormByIdAsync(int id);
+//        Task<Form> GetFormByIdWithFieldsAsync(int id);
+//        Task UpdateFormAsync(Form form);
+//        Task DeleteFormAsync(int id);
+//        Task<Form> GetFormBySlugAsync(string slug);
+//        Task<Form> GetFormWithSubmissionsAsync(int id);
+//        Task<Form?> GetFormWithFieldsBySlugAsync(string slug);
+//        Task<IEnumerable<FormSubmission>> GetFormSubmissionsForExportAsync(int formId);
+//    }
+//}
 
 
 

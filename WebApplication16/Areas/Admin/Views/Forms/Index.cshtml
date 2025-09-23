@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Form>
+﻿@model IEnumerable<WebApplication16.Models.Form>
 
 @{
     ViewData["Title"] = "مدیریت فرم‌ها";
@@ -32,13 +32,22 @@
                         <tr>
                             <td>@item.Name</td>
                             <td>@item.Slug</td>
-                            <td>@(item.IsActive ? "فعال" : "غیرفعال")</td>
-                            <td>@item.CreatedAt.ToShortDateString()</td>
                             <td>
-                                <a asp-action="Design" asp-route-id="@item.Id" class="btn btn-sm btn-success">طراحی</a>
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">ویرایش</a>
-                                <a asp-action="Submissions" asp-route-id="@item.Id" class="btn btn-sm btn-info">مشاهده ارسال‌ها</a> <!-- لینک اصلاح شد -->
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">حذف</a>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">غیرفعال</span>
+                                }
+                            </td>
+                            <td>@item.CreatedAt.ToString("yyyy/MM/dd")</td>
+                            <td>
+                                <a asp-action="Design" asp-route-id="@item.Id" class="btn btn-sm btn-success" title="طراحی"><i class="bi bi-palette"></i></a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" title="ویرایش"><i class="bi bi-pencil-square"></i></a>
+                                <a asp-action="Submissions" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="مشاهده ارسال‌ها"><i class="bi bi-archive"></i></a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" title="حذف"><i class="bi bi-trash"></i></a>
                             </td>
                         </tr>
                     }
@@ -47,3 +56,4 @@
         </div>
     </div>
 </section>
+

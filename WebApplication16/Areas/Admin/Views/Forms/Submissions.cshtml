@@ -1,23 +1,26 @@
 ﻿@model WebApplication16.Models.Form
 
 @{
-    ViewData["Title"] = "لیست اطلاعات ارسالی برای فرم: " + Model.Name;
+    ViewData["Title"] = "اطلاعات ارسال شده برای فرم: " + Model.Name;
 }
 
-<div class="pagetitle">
-    <h1>@ViewData["Title"]</h1>
+<div class="d-flex justify-content-between align-items-center">
+    <div class="pagetitle">
+        <h1>@ViewData["Title"]</h1>
+    </div>
+    <div>
+        <a asp-action="ExportToCsv" asp-route-id="@Model.Id" class="btn btn-success">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+            خروجی CSV
+        </a>
+    </div>
 </div>
 
 <section class="section">
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">@Model.Name</h5>
-
-            @if (!Model.Submissions.Any())
-            {
-                <div class="alert alert-info">هیچ اطلاعاتی برای این فرم ارسال نشده است.</div>
-            }
-            else
+            <h5 class="card-title">لیست ارسال‌ها</h5>
+            @if (Model.Submissions != null && Model.Submissions.Any())
             {
                 <table class="table table-hover">
                     <thead>
@@ -28,19 +31,106 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var submission in Model.Submissions)
+                        @foreach (var item in Model.Submissions.OrderByDescending(s => s.CreatedAt))
                         {
                             <tr>
-                                <td>@submission.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
-                                <td>@submission.IpAddress</td>
+                                <td>@item.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                                <td>@item.IpAddress</td>
                                 <td>
-                                    <a href="#" class="btn btn-sm btn-info">مشاهده جزئیات</a>
+                                    <a asp-action="SubmissionDetails" asp-route-id="@item.Id" class="btn btn-sm btn-info">مشاهده جزئیات</a>
                                 </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             }
+            else
+            {
+                <div class="alert alert-warning" role="alert">
+                    هنوز هیچ اطلاعاتی برای این فرم ارسال نشده است.
+                </div>
+            }
         </div>
     </div>
 </section>
+
+
+
+@* @using WebApplication16.Extensions
+@using WebApplication16.Models;
+@model Form
+
+@{
+    ViewData["Title"] = $"ارسال‌های فرم: {Model.Name}";
+}
+
+<div class="pagetitle">
+    <h1>@ViewData["Title"]</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index" asp-controller="Dashboard">داشبورد</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">مدیریت فرم‌ها</a></li>
+            <li class="breadcrumb-item active">ارسال‌ها</li>
+        </ol>
+    </nav>
+</div>
+
+<section class="section">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">لیست ارسالی‌ها</h5>
+                    <div class="d-flex justify-content-between mb-3">
+                        <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+                        <a asp-action="ExportSubmissions" asp-route-id="@Model.Id" class="btn btn-success text-white">
+                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> خروجی CSV
+                        </a>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table datatable">
+                            <thead>
+                                <tr>
+                                    <th>شناسه</th>
+                                    <th>تاریخ ارسال</th>
+                                    <th>آی‌پی کاربر</th>
+                                    @foreach (var field in Model.FormFields)
+                                    {
+                                        <th>@field.Label</th>
+                                    }
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var submission in Model.Submissions.OrderByDescending(s => s.CreatedAt))
+                                {
+                                    <tr>
+                                        <td>@submission.Id</td>
+                                        <td>@submission.CreatedAt.ToPersianDate()</td>
+                                        <td>@submission.IpAddress</td>
+                                        @foreach (var field in Model.FormFields)
+                                        {
+                                            var submissionData = submission.SubmissionData.FirstOrDefault(d => d.FieldName == field.Name);
+                                            <td>@(submissionData?.FieldValue ?? "-")</td>
+                                        }
+                                        <td>
+                                            <a asp-action="SubmissionDetails" asp-route-id="@submission.Id" class="btn btn-sm btn-info text-white">جزئیات</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // Datatables initialization script here
+    </script>
+}
+ *@

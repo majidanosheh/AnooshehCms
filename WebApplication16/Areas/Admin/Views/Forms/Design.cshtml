@@ -1,16 +1,52 @@
-﻿@model Form
+﻿@model WebApplication16.Models.Form
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
 @functions {
     public string GetAntiXsrfRequestToken()
     {
-        return Xsrf.GetAndStoreTokens(Context).RequestToken;
+        return Xsrf.GetAndStoreTokens(Context).RequestToken!;
     }
 }
 
 @{
     ViewData["Title"] = "طراحی فرم: " + Model.Name;
 }
+
+<!-- کتابخانه های CSS لازم -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+
+<!-- استایل های سفارشی -->
+<style>
+    #field-palette .list-group-item {
+        cursor: grab;
+    }
+
+    #form-canvas {
+        min-height: 400px;
+        border: 2px dashed #ced4da;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .list-group-item .handle {
+        cursor: move;
+    }
+
+    .list-group-item .field-actions {
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+    }
+
+    .list-group-item:hover .field-actions {
+        opacity: 1;
+    }
+
+    .ghost-class {
+        opacity: 0.4;
+        background-color: #c8ebfb;
+    }
+</style>
 
 <div class="pagetitle">
     <h1>@ViewData["Title"]</h1>
@@ -18,24 +54,24 @@
 
 <section class="section">
     <div class="row">
-        <!-- ستون اول: پالت فیلدها -->
-        <div class="col-md-4">
+        <!-- ستون پالت فیلدها -->
+        <div class="col-lg-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">فیلدهای موجود</h5>
-                    <p>فیلد مورد نظر را بکشید و در ستون کناری رها کنید.</p>
+                    <h5 class="card-title">ابزارها</h5>
+                    <p>فیلد مورد نظر را به ستون کناری بکشید.</p>
                     <div id="field-palette" class="list-group">
-                        <div class="list-group-item field-palette-item" data-field-type="Text">فیلد متنی</div>
-                        <div class="list-group-item field-palette-item" data-field-type="TextArea">متن بلند</div>
-                        <div class="list-group-item field-palette-item" data-field-type="Number">عدد</div>
-                        <div class="list-group-item field-palette-item" data-field-type="Email">ایمیل</div>
+                        <div class="list-group-item" data-field-type="Text"><i class="bi bi-fonts me-2"></i>فیلد متنی</div>
+                        <div class="list-group-item" data-field-type="TextArea"><i class="bi bi-textarea-t me-2"></i>متن بلند</div>
+                        <div class="list-group-item" data-field-type="Number"><i class="bi bi-hash me-2"></i>عدد</div>
+                        <div class="list-group-item" data-field-type="Email"><i class="bi bi-at me-2"></i>ایمیل</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ستون دوم: بوم طراحی فرم -->
-        <div class="col-md-8">
+        <!-- ستون بوم طراحی -->
+        <div class="col-lg-8">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">پیش‌نمایش فرم</h5>
@@ -51,13 +87,13 @@
     </div>
 </section>
 
-<!-- Edit Field Modal -->
-<div class="modal fade" id="editFieldModal" tabindex="-1" aria-labelledby="editFieldModalLabel" aria-hidden="true">
+<!-- Modal برای ویرایش فیلد -->
+<div class="modal fade" id="editFieldModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editFieldModalLabel">ویرایش فیلد</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">ویرایش فیلد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editFieldId" />
@@ -65,20 +101,18 @@
                     <label for="editFieldLabel" class="form-label">عنوان فیلد</label>
                     <input type="text" class="form-control" id="editFieldLabel">
                 </div>
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="editFieldIsRequired">
-                    <label class="form-check-label" for="editFieldIsRequired">ضروری است</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="editFieldIsRequired">
+                    <label class="form-check-label" for="editFieldIsRequired">این فیلد الزامی است</label>
                 </div>
-                <!-- Add more settings here in the future -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-primary" id="saveFieldChanges">ذخیره تغییرات</button>
+                <button type="button" class="btn btn-primary" id="saveFieldChanges">ذخیره</button>
             </div>
         </div>
     </div>
 </div>
-
 
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -87,104 +121,86 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // --- راه‌اندازی اولیه ---
             const formId = @Model.Id;
             const verificationToken = '@GetAntiXsrfRequestToken()';
             const canvas = document.getElementById('form-canvas');
-            const palette = document.getElementById('field-palette');
             const editModal = new bootstrap.Modal(document.getElementById('editFieldModal'));
 
-            // =================================================================
-            // DRAG & DROP INITIALIZATION
-            // =================================================================
-            new Sortable(palette, {
+            // --- فعال‌سازی Drag & Drop ---
+            new Sortable(document.getElementById('field-palette'), {
                 group: { name: 'shared', pull: 'clone', put: false },
                 sort: false,
-                animation: 150
             });
 
             new Sortable(canvas, {
                 group: 'shared',
+                handle: '.handle',
                 animation: 150,
-                handle: '.handle', // Only the grip icon can be used for dragging
+                ghostClass: 'ghost-class',
                 onAdd: handleAddField,
                 onUpdate: handleUpdateOrder
             });
 
-            // =================================================================
-            // EVENT LISTENERS (DELEGATION)
-            // =================================================================
+            // --- مدیریت رویدادها ---
             canvas.addEventListener('click', function(e) {
-                if (e.target.classList.contains('edit-field-btn')) {
-                    const fieldId = e.target.getAttribute('data-id');
-                    handleEditField(fieldId);
-                }
-                if (e.target.classList.contains('delete-field-btn')) {
-                    const fieldId = e.target.getAttribute('data-id');
-                    handleDeleteField(fieldId);
-                }
+                const editBtn = e.target.closest('.edit-field-btn');
+                const deleteBtn = e.target.closest('.delete-field-btn');
+                if (editBtn) handleEditField(editBtn.dataset.id);
+                if (deleteBtn) handleDeleteField(deleteBtn.dataset.id);
             });
-
             document.getElementById('saveFieldChanges').addEventListener('click', handleSaveChanges);
 
-
-            // =================================================================
-            // HANDLER FUNCTIONS
-            // =================================================================
+            // --- توابع اجرایی ---
+            async function sendRequest(url, method, body) {
+                const headers = { 'RequestVerificationToken': verificationToken };
+                const options = { method, headers };
+                if (body) {
+                    headers['Content-Type'] = 'application/json';
+                    options.body = JSON.stringify(body);
+                }
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    toastr.error(`خطای سرور: ${response.statusText}`);
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                return response;
+            }
 
             async function handleAddField(evt) {
-                const itemEl = evt.item;
-                const fieldType = itemEl.getAttribute('data-field-type');
-
-                const formData = new URLSearchParams();
-                formData.append('formId', formId);
-                formData.append('fieldType', fieldType);
+                const fieldType = evt.item.dataset.fieldType;
+                const tempElement = evt.item;
 
                 try {
-                    const response = await fetch('@Url.Action("AddFieldToForm", "Forms")', {
+                     const response = await fetch(`@Url.Action("AddFieldToForm", "Forms")?formId=${formId}&fieldType=${fieldType}`, {
                         method: 'POST',
-                        headers: { 'RequestVerificationToken': verificationToken },
-                        body: formData
+                        headers: { 'RequestVerificationToken': verificationToken }
                     });
 
                     if (response.ok) {
                         const newFieldHtml = await response.text();
-                        itemEl.outerHTML = newFieldHtml;
-                        toastr.success('فیلد جدید با موفقیت اضافه شد.');
-                        handleUpdateOrder(); // Save the new order
+                        const newElement = document.createElement('div');
+                        newElement.innerHTML = newFieldHtml;
+                        tempElement.replaceWith(newElement.firstElementChild);
+                        toastr.success('فیلد اضافه شد.');
+                        await handleUpdateOrder();
                     } else {
-                        itemEl.remove();
-                        toastr.error('خطا در افزودن فیلد.');
+                        throw new Error("Failed to add field");
                     }
-                } catch (error) {
-                    itemEl.remove();
-                    toastr.error('خطای شبکه در افزودن فیلد.');
+                } catch(error) {
+                    tempElement.remove();
+                    toastr.error('خطا در افزودن فیلد.');
                 }
             }
 
             async function handleUpdateOrder() {
-                const fieldItems = canvas.querySelectorAll('.list-group-item[data-field-id]');
-                const fieldIds = Array.from(fieldItems).map(item => parseInt(item.getAttribute('data-field-id')));
-
+                const fieldIds = Array.from(canvas.querySelectorAll('[data-field-id]')).map(el => parseInt(el.dataset.fieldId));
                 const data = { FormId: formId, FieldIds: fieldIds };
-
                 try {
-                    const response = await fetch('@Url.Action("UpdateFieldOrder", "Forms")', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'RequestVerificationToken': verificationToken
-                        },
-                        body: JSON.stringify(data)
-                    });
-
-                    if (response.ok) {
-                        const result = await response.json();
-                        if(result.success) toastr.success(result.message);
-                    } else {
-                        toastr.error('خطای سرور در ذخیره ترتیب فیلدها.');
-                    }
-                } catch (error) {
-                    toastr.error('خطای شبکه در ذخیره ترتیب فیلدها.');
+                    const response = await sendRequest('@Url.Action("UpdateFieldOrder", "Forms")', 'POST', data);
+                    if(response.ok) toastr.info('ترتیب فیلدها ذخیره شد.');
+                } catch (e) {
+                    console.error("Error updating order:", e);
                 }
             }
 
@@ -198,75 +214,58 @@
                         document.getElementById('editFieldIsRequired').checked = field.isRequired;
                         editModal.show();
                     } else {
-                        toastr.error('اطلاعات فیلد یافت نشد.');
+                        throw new Error("Field not found");
                     }
-                } catch (error) {
-                    toastr.error('خطای شبکه در دریافت اطلاعات فیلد.');
+                } catch(e) {
+                    toastr.error('اطلاعات فیلد یافت نشد.');
                 }
             }
 
             async function handleSaveChanges() {
                 const fieldId = document.getElementById('editFieldId').value;
-                const updatedData = {
+                const data = {
                     Id: parseInt(fieldId),
                     Label: document.getElementById('editFieldLabel').value,
                     IsRequired: document.getElementById('editFieldIsRequired').checked,
-                    FormId: formId // Include other required properties, even if not edited
+                    // ارسال مقادیر دیگر برای جلوگیری از null شدن آن‌ها در کنترلر
+                    FormId: formId,
+                    FieldType: 0, // مقدار پیش فرض، در سرور نادیده گرفته میشود
+                    Order: 0,     // مقدار پیش فرض، در سرور نادیده گرفته میشود
                 };
 
                 try {
-                    const response = await fetch(`@Url.Action("UpdateField", "Forms")/${fieldId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'RequestVerificationToken': verificationToken
-                        },
-                        body: JSON.stringify(updatedData)
-                    });
-
+                    const response = await sendRequest(`@Url.Action("UpdateField", "Forms")`, 'POST', data);
                     if (response.ok) {
-                        const newFieldHtml = await response.text();
-                        const oldFieldElement = document.querySelector(`.list-group-item[data-field-id='${fieldId}']`);
-                        if(oldFieldElement) oldFieldElement.outerHTML = newFieldHtml;
+                        const newHtml = await response.text();
+                        const elementToReplace = document.querySelector(`[data-field-id='${fieldId}']`);
+                        if(elementToReplace) {
+                           elementToReplace.outerHTML = newHtml;
+                        }
                         editModal.hide();
-                        toastr.success('فیلد با موفقیت ویرایش شد.');
+                        toastr.success('فیلد ویرایش شد.');
                     } else {
-                         toastr.error('خطا در ویرایش فیلد.');
+                         throw new Error("Failed to update field");
                     }
-                } catch (error) {
-                    toastr.error('خطای شبکه در ویرایش فیلد.');
+                } catch (e) {
+                     toastr.error('خطا در ویرایش فیلد.');
                 }
             }
 
             function handleDeleteField(fieldId) {
                 Swal.fire({
-                    title: 'آیا مطمئن هستید؟',
-                    text: "این عملیات قابل بازگشت نیست!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'بله، حذف کن!',
-                    cancelButtonText: 'انصراف'
+                    title: 'آیا مطمئن هستید؟', text: "این عملیات غیرقابل بازگشت است!", icon: 'warning',
+                    showCancelButton: true, confirmButtonText: 'بله، حذف کن!', cancelButtonText: 'انصراف'
                 }).then(async (result) => {
                     if (result.isConfirmed) {
-                         try {
-                            const response = await fetch(`@Url.Action("DeleteField", "Forms")/${fieldId}`, {
-                                method: 'POST',
-                                headers: { 'RequestVerificationToken': verificationToken }
-                            });
-                            if (response.ok) {
-                                const fieldElement = document.querySelector(`.list-group-item[data-field-id='${fieldId}']`);
-                                if(fieldElement) fieldElement.remove();
-                                Swal.fire('حذف شد!', 'فیلد مورد نظر حذف شد.', 'success');
-                            } else {
-                                Swal.fire('خطا!', 'خطایی در حذف فیلد رخ داد.', 'error');
-                            }
-                        } catch (error) {
-                            Swal.fire('خطا!', 'خطای شبکه در حذف فیلد.', 'error');
+                        try {
+                            await sendRequest(`@Url.Action("DeleteField", "Forms")/${fieldId}`, 'POST');
+                            document.querySelector(`[data-field-id='${fieldId}']`)?.remove();
+                            Swal.fire('حذف شد!', 'فیلد مورد نظر حذف شد.', 'success');
+                        } catch (e) {
+                             Swal.fire('خطا!', 'خطایی در حذف فیلد رخ داد.', 'error');
                         }
                     }
-                })
+                });
             }
         });
     </script>

@@ -1,15 +1,47 @@
-﻿@model FormField
+﻿@model WebApplication16.Models.FormField
 
-<div class="list-group-item" data-field-id="@Model.Id">
-    <i class="bi bi-grip-vertical handle" style="cursor: grab;"></i> <!-- آیکون برای Drag -->
-    <strong>@Model.Label</strong>
-    <small class="text-muted">(@Model.FieldType)</small>
-    @if (Model.IsRequired)
-    {
-        <span class="badge bg-danger">ضروری</span>
-    }
-    <div class="float-end">
-        <button type="button" class="btn btn-sm btn-warning edit-field-btn" data-id="@Model.Id">ویرایش</button>
-        <button type="button" class="btn btn-sm btn-danger delete-field-btn" data-id="@Model.Id">حذف</button>
+<div class="list-group-item d-flex justify-content-between align-items-center" data-field-id="@Model.Id">
+    <div>
+        <i class="bi bi-grip-vertical handle me-2" style="cursor: move;"></i>
+        <strong class="ms-2">@Model.Label</strong>
+        <small class="text-muted">(@Model.FieldType)</small>
+        @if (Model.IsRequired)
+        {
+            <span class="badge bg-danger ms-2">ضروری</span>
+        }
+    </div>
+    <div class="field-actions">
+        <button type="button" class="btn btn-sm btn-outline-primary edit-field-btn" data-id="@Model.Id">
+            <i class="bi bi-pencil-square"></i> ویرایش
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger delete-field-btn" data-id="@Model.Id">
+            <i class="bi bi-trash"></i> حذف
+        </button>
     </div>
 </div>
+
+
+
+@* @model WebApplication16.Models.FormField
+
+<div class="list-group-item d-flex justify-content-between align-items-center" data-field-id="@Model.Id">
+    <div>
+        <i class="bi bi-grip-vertical handle" style="cursor: move;"></i> <!-- Handle for Drag & Drop -->
+        <strong class="ms-2">@Model.Label</strong>
+        <small class="text-muted">(@Model.FieldType.ToString())</small>
+        @if (Model.IsRequired)
+        {
+            <span class="badge bg-danger ms-2">ضروری</span>
+        }
+    </div>
+    <div class="field-actions">
+        <button type="button" class="btn btn-sm btn-outline-primary edit-field-btn" data-id="@Model.Id">
+            <i class="bi bi-pencil-square"></i> ویرایش
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger delete-field-btn" data-id="@Model.Id">
+            <i class="bi bi-trash"></i> حذف
+        </button>
+    </div>
+</div>
+
+ *@

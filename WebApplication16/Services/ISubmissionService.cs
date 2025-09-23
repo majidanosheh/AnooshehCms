@@ -1,25 +1,16 @@
-﻿using WebApplication16.Models;
-namespace WebApplication16.Services.Interfaces
+﻿using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using WebApplication16.Models;
+using WebApplication16.ViewModels;
+
+namespace WebApplication16.Services
 {
-    /// <summary>
-    /// سرویس برای مدیریت داده‌های ثبت شده توسط کاربران
-    /// </summary>
     public interface ISubmissionService
     {
-        /// <summary>
-        /// ذخیره اطلاعات ارسال شده یک فرم
-        /// </summary>
-        Task<FormSubmission> CreateSubmissionAsync(FormSubmission submission);
-
-        /// <summary>
-        /// دریافت تمام داده‌های ثبت شده برای یک فرم خاص
-        /// </summary>
-        Task<IEnumerable<FormSubmission>> GetSubmissionsForFormAsync(int formId);
-
-        /// <summary>
-        /// دریافت جزئیات کامل یک داده ثبت شده خاص
-        /// </summary>
-        Task<FormSubmission> GetSubmissionDetailsAsync(int submissionId);
-        Task<bool> CreateSubmissionAsync(int formId, IFormCollection formData, string ipAddress);
+        Task<SubmissionResult> CreateSubmissionAsync(int formId, IFormCollection formData, string? ipAddress);
+        Task<FormSubmission?> GetSubmissionDetailsAsync(int submissionId);
+        Task<IEnumerable<FormSubmission>> GetAllSubmissionsWithDataAsync(int formId);
     }
 }
+
