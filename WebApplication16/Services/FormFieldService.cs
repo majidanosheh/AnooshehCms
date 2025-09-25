@@ -1,22 +1,29 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using WebApplication16.Areas.Identity.DataAccess;
-using WebApplication16.Enums;
 using WebApplication16.Models;
+using WebApplication16.Enums;
+using System;
 
 namespace WebApplication16.Services
 {
     public class FormFieldService : IFormFieldService
     {
         private readonly WebApplication16Context _context;
+        private readonly IRazorViewToStringRenderer _viewRenderer;
 
-        public FormFieldService(WebApplication16Context context)
+        public FormFieldService(WebApplication16Context context, IRazorViewToStringRenderer viewRenderer)
         {
             _context = context;
+            _viewRenderer = viewRenderer;
         }
 
         public async Task<FormField?> AddFieldToFormAsync(int formId, string fieldType)
         {
-            if (!Enum.TryParse<FieldType>(fieldType, true, out var typeEnum))
+            if (!Enum.TryParse(typeof(FieldType), fieldType, true, out var type))
             {
                 return null;
             }
@@ -24,15 +31,15 @@ namespace WebApplication16.Services
             var form = await _context.Forms.Include(f => f.FormFields).FirstOrDefaultAsync(f => f.Id == formId);
             if (form == null) return null;
 
-            var maxOrder = form.FormFields.Any() ? form.FormFields.Max(f => f.Order) : -1;
-
+            var defaultLabel = "فیلد جدید";
             var newField = new FormField
             {
                 FormId = formId,
-                FieldType = typeEnum,
-                Label = $"فیلد {typeEnum}",
-                Name = $"{typeEnum.ToString().ToLower()}_{Guid.NewGuid().ToString("N")[..8]}",
-                Order = maxOrder + 1
+                FieldType = (FieldType)type,
+                Label = defaultLabel,
+                Name = GenerateName(defaultLabel), // *** این خط جدید و بسیار مهم است ***
+                IsRequired = false,
+                Order = form.FormFields.Any() ? form.FormFields.Max(f => f.Order) + 1 : 1
             };
 
             _context.FormFields.Add(newField);
@@ -55,72 +62,95 @@ namespace WebApplication16.Services
             return await _context.FormFields.AsNoTracking().FirstOrDefaultAsync(f => f.Id == fieldId);
         }
 
-        public async Task<FormField?> UpdateFieldAsync(FormField fieldData)
+        public async Task<string?> UpdateFieldAsync(FormField updatedField)
         {
-            var field = await _context.FormFields.FindAsync(fieldData.Id);
+            var field = await _context.FormFields.FindAsync(updatedField.Id);
             if (field == null) return null;
 
-            field.Label = fieldData.Label;
-            field.IsRequired = fieldData.IsRequired;
+            field.Label = updatedField.Label;
+            field.IsRequired = updatedField.IsRequired;
+
+            // اگر نام فیلد خالی است، بر اساس لیبل جدید یک نام برای آن بساز
+            if (string.IsNullOrWhiteSpace(field.Name))
+            {
+                field.Name = GenerateName(updatedField.Label);
+            }
 
             await _context.SaveChangesAsync();
-            return field;
+
+            return await _viewRenderer.RenderViewToStringAsync("~/Areas/Admin/Views/Forms/_FormFieldItem.cshtml", field);
         }
 
         public async Task UpdateFieldOrderAsync(int formId, List<int> fieldIds)
         {
             var fields = await _context.FormFields.Where(f => f.FormId == formId).ToListAsync();
+
             for (int i = 0; i < fieldIds.Count; i++)
             {
                 var field = fields.FirstOrDefault(f => f.Id == fieldIds[i]);
                 if (field != null)
                 {
-                    field.Order = i;
+                    field.Order = i + 1;
                 }
             }
             await _context.SaveChangesAsync();
+        }
+
+        private string GenerateName(string label)
+        {
+            if (string.IsNullOrWhiteSpace(label))
+                return $"field_{Guid.NewGuid().ToString("N")[..8]}";
+
+            string sanitized = Regex.Replace(label.Trim(), @"[^a-zA-Z0-9\s-]", "");
+            sanitized = Regex.Replace(sanitized, @"\s+", "_").ToLower();
+
+            return $"{sanitized}_{Guid.NewGuid().ToString("N")[..4]}";
         }
     }
 }
 
 
-
+//using Microsoft.AspNetCore.Mvc.Rendering;
 //using Microsoft.EntityFrameworkCore;
-//using System;
 //using System.Collections.Generic;
 //using System.Linq;
+//using System.Text.RegularExpressions;
 //using System.Threading.Tasks;
 //using WebApplication16.Areas.Identity.DataAccess;
-//using WebApplication16.Enums;
 //using WebApplication16.Models;
+//using WebApplication16.Enums;
+//using System;
 
 //namespace WebApplication16.Services
 //{
 //    public class FormFieldService : IFormFieldService
 //    {
 //        private readonly WebApplication16Context _context;
+//        private readonly IRazorViewToStringRenderer _viewRenderer;
 
-//        public FormFieldService(WebApplication16Context context)
+//        public FormFieldService(WebApplication16Context context, IRazorViewToStringRenderer viewRenderer)
 //        {
 //            _context = context;
+//            _viewRenderer = viewRenderer;
 //        }
 
-//        public async Task<FormField> AddFieldToFormAsync(int formId, string fieldType)
+//        public async Task<FormField?> AddFieldToFormAsync(int formId, string fieldType)
 //        {
-//            // This safely parses the string from JavaScript into a C# enum
-//            if (!Enum.TryParse<FieldType>(fieldType, true, out var fieldTypeEnum))
+//            if (!Enum.TryParse(typeof(FieldType), fieldType, true, out var type))
 //            {
-//                return null; // Invalid field type, return null to indicate failure
+//                return null;
 //            }
 
 //            var form = await _context.Forms.Include(f => f.FormFields).FirstOrDefaultAsync(f => f.Id == formId);
 //            if (form == null) return null;
 
+//            var defaultLabel = "فیلد جدید";
 //            var newField = new FormField
 //            {
 //                FormId = formId,
-//                FieldType = fieldTypeEnum,
-//                Label = $"New {fieldType} Field", // Default label
+//                FieldType = (FieldType)type,
+//                Label = defaultLabel,
+//                Name = GenerateName(defaultLabel),
 //                IsRequired = false,
 //                Order = form.FormFields.Any() ? form.FormFields.Max(f => f.Order) + 1 : 1
 //            };
@@ -130,58 +160,58 @@ namespace WebApplication16.Services
 //            return newField;
 //        }
 
+//        public async Task<bool> DeleteFieldAsync(int fieldId)
+//        {
+//            var field = await _context.FormFields.FindAsync(fieldId);
+//            if (field == null) return false;
+
+//            _context.FormFields.Remove(field);
+//            await _context.SaveChangesAsync();
+//            return true;
+//        }
+
+//        public async Task<FormField?> GetFieldByIdAsync(int fieldId)
+//        {
+//            return await _context.FormFields.AsNoTracking().FirstOrDefaultAsync(f => f.Id == fieldId);
+//        }
+
+//        public async Task<string?> UpdateFieldAsync(FormField updatedField)
+//        {
+//            var field = await _context.FormFields.FindAsync(updatedField.Id);
+//            if (field == null) return null;
+
+//            field.Label = updatedField.Label;
+//            field.IsRequired = updatedField.IsRequired;
+
+//            await _context.SaveChangesAsync();
+
+//            return await _viewRenderer.RenderViewToStringAsync("~/Areas/Admin/Views/Forms/_FormFieldItem.cshtml", field);
+//        }
+
 //        public async Task UpdateFieldOrderAsync(int formId, List<int> fieldIds)
 //        {
 //            var fields = await _context.FormFields.Where(f => f.FormId == formId).ToListAsync();
+
 //            for (int i = 0; i < fieldIds.Count; i++)
 //            {
 //                var field = fields.FirstOrDefault(f => f.Id == fieldIds[i]);
 //                if (field != null)
 //                {
-//                    field.Order = i + 1; // Order is 1-based
+//                    field.Order = i + 1;
 //                }
 //            }
 //            await _context.SaveChangesAsync();
 //        }
 
-//        public async Task<FormField> GetFieldByIdAsync(int fieldId)
+//        private string GenerateName(string label)
 //        {
-//            return await _context.FormFields.AsNoTracking().FirstOrDefaultAsync(f => f.Id == fieldId);
-//        }
+//            if (string.IsNullOrWhiteSpace(label))
+//                return $"field_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
 
-//        public async Task<FormField> UpdateFieldAsync(FormField updatedField)
-//        {
-//            var field = await _context.FormFields.FindAsync(updatedField.Id);
-//            if (field == null) return null;
+//            string sanitized = Regex.Replace(label.Trim(), @"[^a-zA-Z0-9\s-]", "");
+//            sanitized = Regex.Replace(sanitized, @"\s+", "_").ToLower();
 
-//            // Update properties from the incoming object
-//            field.Label = updatedField.Label;
-//            field.IsRequired = updatedField.IsRequired;
-//            // Add other properties to update in the future (e.g., Placeholder, OptionsJson)
-
-//            await _context.SaveChangesAsync();
-//            return field;
-//        }
-
-//        public async Task DeleteFieldAsync(int fieldId)
-//        {
-//            var field = await _context.FormFields.FindAsync(fieldId);
-//            if (field != null)
-//            {
-//                _context.FormFields.Remove(field);
-//                await _context.SaveChangesAsync();
-//            }
-//        }
-//        public async Task<FormField?> UpdateFieldAsync(int id, string label, bool isRequired)
-//        {
-//            var field = await _context.FormFields.FindAsync(id);
-//            if (field == null) return null;
-
-//            field.Label = label;
-//            field.IsRequired = isRequired;
-//            await _context.SaveChangesAsync();
-
-//            return field;
+//            return $"{sanitized}_{Guid.NewGuid().ToString("N").Substring(0, 4)}";
 //        }
 //    }
 //}

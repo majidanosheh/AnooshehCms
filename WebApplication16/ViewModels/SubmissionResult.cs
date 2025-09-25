@@ -3,9 +3,9 @@
     public class SubmissionResult
     {
         public bool IsSuccess { get; private set; }
-        public List<string> Errors { get; private set; } = new List<string>();
+        public List<string> Errors { get; set; } = new List<string>();
 
-        public static SubmissionResult Success() => new() { IsSuccess = true };
+        //public static SubmissionResult Success() => new() { IsSuccess = true };
 
         public static SubmissionResult Failed(params string[] errors)
         {
@@ -16,6 +16,7 @@
             }
             return result;
         }
+        public bool Success { get; set; }
     }
 }
 
