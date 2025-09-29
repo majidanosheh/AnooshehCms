@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApplication16.Areas.Identity.DataAccess;
 
@@ -11,9 +12,11 @@ using WebApplication16.Areas.Identity.DataAccess;
 namespace WebApplication16.Migrations
 {
     [DbContext(typeof(WebApplication16Context))]
-    partial class WebApplication16ContextModelSnapshot : ModelSnapshot
+    [Migration("20250925232537_AddFormBuilderFeatures")]
+    partial class AddFormBuilderFeatures
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -1,54 +1,67 @@
-﻿namespace WebApplication16.Services
+﻿using Microsoft.AspNetCore.Http;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using System;
+using System.Linq;
+
+namespace WebApplication16.Services
 {
     public class LocalFileStorageService : IFileStorageService
     {
         private readonly IWebHostEnvironment _env;
-        private readonly IFileTypeValidator _fileTypeValidator; 
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private const string UploadsFolderName = "form_uploads";
 
-
-        public LocalFileStorageService(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, IFileTypeValidator fileTypeValidator)
+        public LocalFileStorageService(IWebHostEnvironment env)
         {
             _env = env;
-            _httpContextAccessor = httpContextAccessor;
-            _fileTypeValidator = fileTypeValidator; 
-
         }
 
-        public async Task<string> SaveFileAsync(Stream fileStream, string fileName)
+        /// <summary>
+        /// فایل را در مسیر wwwroot/form_uploads ذخیره می‌کند.
+        /// </summary>
+        /// <param name="file">فایل ارسالی</param>
+        /// <param name="folderName">زیرپوشه برای ذخیره فایل (اختیاری)</param>
+        /// <returns>مسیر نسبی فایل ذخیره شده</returns>
+        public async Task<string?> StoreFileAsync(IFormFile file, string folderName = UploadsFolderName)
         {
-            // 1. اعتبارسنجی امضای فایل
-            if (!await _fileTypeValidator.IsValidFileAsync(fileStream, fileName))
+            if (file == null || file.Length == 0)
             {
-                throw new ArgumentException("فرمت فایل معتبر نیست، حجم آن زیاد است یا با پسوند آن مطابقت ندارد.");
+                return null;
             }
 
-            // 2. محدودیت حجم (مثلاً ۵ مگابایت)
-            const int maxFileSize = 5 * 1024 * 1024; // 5 MB
-            if (fileStream.Length > maxFileSize)
+            // اطمینان از نام‌گذاری مناسب برای جلوگیری از تداخل
+            var uploadsFolder = Path.Combine(_env.WebRootPath, folderName);
+            if (!Directory.Exists(uploadsFolder))
             {
-                throw new ArgumentException($"حجم فایل نباید بیشتر از {maxFileSize / 1024 / 1024} مگابایت باشد.");
+                Directory.CreateDirectory(uploadsFolder);
             }
 
-            var uploadsPath = Path.Combine(_env.WebRootPath, "uploads", "images");
-            if (!Directory.Exists(uploadsPath))
+            // تضمین نام فایل منحصر به فرد
+            var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
-                Directory.CreateDirectory(uploadsPath);
+                await file.CopyToAsync(fileStream);
             }
 
-            var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}"; // استفاده از Path.GetExtension برای امنیت بیشتر
-            var filePath = Path.Combine(uploadsPath, uniqueFileName);
+            // بازگرداندن مسیر نسبی برای ذخیره در دیتابیس
+            return $"/{folderName}/{uniqueFileName}";
+        }
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
+        public void DeleteFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath))
             {
-                await fileStream.CopyToAsync(stream);
+                return;
             }
 
-            var request = _httpContextAccessor.HttpContext.Request;
-            var baseUrl = $"{request.Scheme}://{request.Host}";
-
-            return $"{baseUrl}/uploads/images/{uniqueFileName}";
+            var fullPath = Path.Combine(_env.WebRootPath, filePath.TrimStart('/'));
+            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+            }
         }
     }
 }
-

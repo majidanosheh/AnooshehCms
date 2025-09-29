@@ -9,14 +9,14 @@
 
 @{
     ViewData["Title"] = "طراحی فرم: " + Model.Name;
+    // ساخت لیست فیلدهای موجود برای استفاده در منطق شرطی
+    string formFieldsJson = Model.FormFields.Any()
+        ? System.Text.Json.JsonSerializer.Serialize(Model.FormFields.OrderBy(f => f.Order).Select(f => new { f.Id, f.Label, f.FieldType }))
+        : "[]";
 }
 
-<!-- کتابخانه های CSS لازم -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-
-
-<!-- استایل های سفارشی -->
 <style>
     #field-palette .list-group-item {
         cursor: grab;
@@ -46,6 +46,14 @@
         opacity: 0.4;
         background-color: #c8ebfb;
     }
+
+    .field-options-container {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
 </style>
 
 <div class="pagetitle">
@@ -65,6 +73,14 @@
                         <div class="list-group-item" data-field-type="TextArea"><i class="bi bi-textarea-t me-2"></i>متن بلند</div>
                         <div class="list-group-item" data-field-type="Number"><i class="bi bi-hash me-2"></i>عدد</div>
                         <div class="list-group-item" data-field-type="Email"><i class="bi bi-at me-2"></i>ایمیل</div>
+                        <div class="list-group-item" data-field-type="Password"><i class="bi bi-lock me-2"></i>رمز عبور</div>
+                        <div class="list-group-item" data-field-type="Date"><i class="bi bi-calendar me-2"></i>تاریخ</div>
+                        <div class="list-group-item" data-field-type="Color"><i class="bi bi-eyedropper me-2"></i>انتخابگر رنگ</div>
+                        <div class="list-group-item" data-field-type="Checkbox"><i class="bi bi-check-square me-2"></i>چک‌باکس</div>
+                        <div class="list-group-item" data-field-type="RadioButton"><i class="bi bi-check-circle me-2"></i>دکمه رادیویی</div>
+                        <div class="list-group-item" data-field-type="Dropdown"><i class="bi bi-list-nested me-2"></i>لیست کشویی</div>
+                        <div class="list-group-item" data-field-type="FileUpload"><i class="bi bi-file-earmark-arrow-up me-2"></i>آپلود فایل</div>
+                        <div class="list-group-item" data-field-type="Hidden"><i class="bi bi-eye-slash me-2"></i>فیلد مخفی</div>
                     </div>
                 </div>
             </div>
@@ -89,26 +105,100 @@
 
 <!-- Modal برای ویرایش فیلد -->
 <div class="modal fade" id="editFieldModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">ویرایش فیلد</h5>
+                <h5 class="modal-title">ویرایش فیلد: <span id="modalFieldLabel"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editFieldId" />
-                <div class="mb-3">
-                    <label for="editFieldLabel" class="form-label">عنوان فیلد</label>
-                    <input type="text" class="form-control" id="editFieldLabel">
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="editFieldIsRequired">
-                    <label class="form-check-label" for="editFieldIsRequired">این فیلد الزامی است</label>
+                <input type="hidden" id="editFieldType" />
+
+                <!-- تب‌ها -->
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button">عمومی</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="conditional-tab" data-bs-toggle="tab" data-bs-target="#conditional" type="button">منطق شرطی</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content pt-3" id="myTabContent">
+                    <!-- تب عمومی -->
+                    <div class="tab-pane fade show active" id="general" role="tabpanel">
+                        <div class="mb-3">
+                            <label for="editFieldLabel" class="form-label">عنوان فیلد</label>
+                            <input type="text" class="form-control" id="editFieldLabel">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFieldName" class="form-label">نام برنامه‌نویسی (API Name)</label>
+                            <input type="text" class="form-control" id="editFieldName" disabled>
+                            <div class="form-text">این نام برای ذخیره در دیتابیس استفاده می‌شود و قابل ویرایش نیست.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFieldCssClasses" class="form-label">کلاس‌های CSS سفارشی</label>
+                            <input type="text" class="form-control" id="editFieldCssClasses">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="editFieldIsRequired">
+                            <label class="form-check-label" for="editFieldIsRequired">این فیلد الزامی است</label>
+                        </div>
+
+                        <!-- تنظیمات خاص فیلد (Dropdown, Radio) -->
+                        <div id="fieldOptions" class="field-options-container" style="display:none;">
+                            <h6>گزینه‌ها (هر خط یک گزینه)</h6>
+                            <div id="optionsList"></div>
+                            <button type="button" id="addOptionButton" class="btn btn-sm btn-outline-secondary mt-2">افزودن گزینه</button>
+                        </div>
+                    </div>
+
+                    <!-- تب منطق شرطی -->
+                    <div class="tab-pane fade" id="conditional" role="tabpanel">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="enableConditionalLogic">
+                            <label class="form-check-label" for="enableConditionalLogic">فعال‌سازی منطق شرطی</label>
+                        </div>
+                        <div id="conditionalRules" style="display:none;">
+                            <div class="mb-3">
+                                <label class="form-label">این فیلد را:</label>
+                                <select id="conditionalAction" class="form-select">
+                                    <option value="show">نمایش بده</option>
+                                    <option value="hide">پنهان کن</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">اگر (When):</label>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <select id="conditionalTargetField" class="form-select">
+                                            <option value="">فیلد را انتخاب کنید</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select id="conditionalOperator" class="form-select">
+                                            <option value="equals">برابر است با</option>
+                                            <option value="not_equals">برابر نیست با</option>
+                                            <option value="greater_than">بزرگتر از</option>
+                                            <option value="less_than">کوچکتر از</option>
+                                            <option value="is_empty">خالی است</option>
+                                            <option value="is_not_empty">خالی نیست</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" id="conditionalValue" class="form-control" placeholder="مقدار">
+                                        <div class="form-text">برای عملگرهای "خالی است/نیست"، این فیلد نادیده گرفته می‌شود.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-primary" id="saveFieldChanges">ذخیره</button>
+                <button type="button" class="btn btn-primary" id="saveFieldChanges">ذخیره تغییرات</button>
             </div>
         </div>
     </div>
@@ -121,13 +211,13 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // --- راه‌اندازی اولیه ---
             const formId = @Model.Id;
+            const formFieldsData = JSON.parse('@Html.Raw(formFieldsJson)');
             const verificationToken = '@GetAntiXsrfRequestToken()';
             const canvas = document.getElementById('form-canvas');
             const editModal = new bootstrap.Modal(document.getElementById('editFieldModal'));
 
-            // --- فعال‌سازی Drag & Drop ---
+            // --- راه‌اندازی اولیه Drag & Drop ---
             new Sortable(document.getElementById('field-palette'), {
                 group: { name: 'shared', pull: 'clone', put: false },
                 sort: false,
@@ -150,8 +240,18 @@
                 if (deleteBtn) handleDeleteField(deleteBtn.dataset.id);
             });
             document.getElementById('saveFieldChanges').addEventListener('click', handleSaveChanges);
+            document.getElementById('addOptionButton').addEventListener('click', addOptionField);
+            document.getElementById('enableConditionalLogic').addEventListener('change', function() {
+                document.getElementById('conditionalRules').style.display = this.checked ? 'block' : 'none';
+            });
+            document.getElementById('conditionalOperator').addEventListener('change', function() {
+                const isValueIgnored = ["is_empty", "is_not_empty"].includes(this.value);
+                document.getElementById('conditionalValue').disabled = isValueIgnored;
+                if (isValueIgnored) document.getElementById('conditionalValue').value = '';
+            });
 
-            // --- توابع اجرایی ---
+
+            // --- توابع کمکی ---
             async function sendRequest(url, method, body) {
                 const headers = { 'RequestVerificationToken': verificationToken };
                 const options = { method, headers };
@@ -167,6 +267,7 @@
                 return response;
             }
 
+            // --- تابع افزودن فیلد ---
             async function handleAddField(evt) {
                 const fieldType = evt.item.dataset.fieldType;
                 const tempElement = evt.item;
@@ -175,7 +276,7 @@
                      const response = await fetch(`@Url.Action("AddFieldToForm", "Forms")?formId=${formId}&fieldType=${fieldType}`, {
                         method: 'POST',
                         headers: { 'RequestVerificationToken': verificationToken }
-                    });
+                     });
 
                     if (response.ok) {
                         const newFieldHtml = await response.text();
@@ -193,25 +294,97 @@
                 }
             }
 
+            // --- تابع به‌روزرسانی ترتیب ---
             async function handleUpdateOrder() {
                 const fieldIds = Array.from(canvas.querySelectorAll('[data-field-id]')).map(el => parseInt(el.dataset.fieldId));
                 const data = { FormId: formId, FieldIds: fieldIds };
                 try {
-                    const response = await sendRequest('@Url.Action("UpdateFieldOrder", "Forms")', 'POST', data);
-                    if(response.ok) toastr.info('ترتیب فیلدها ذخیره شد.');
+                    await sendRequest('@Url.Action("UpdateFieldOrder", "Forms")', 'POST', data);
+                    toastr.info('ترتیب فیلدها ذخیره شد.');
                 } catch (e) {
                     console.error("Error updating order:", e);
                 }
             }
 
+            // --- رندر کردن گزینه‌های لیست/رادیو ---
+            function renderOptions(options) {
+                const optionsList = document.getElementById('optionsList');
+                optionsList.innerHTML = '';
+                options.forEach(option => {
+                    const div = document.createElement('div');
+                    div.className = 'input-group mb-2';
+                    div.innerHTML = `
+                        <input type="text" class="form-control" value="${option}">
+                        <button class="btn btn-outline-danger remove-option-btn" type="button"><i class="bi bi-trash"></i></button>
+                    `;
+                    optionsList.appendChild(div);
+                });
+                document.querySelectorAll('.remove-option-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        this.closest('.input-group').remove();
+                    });
+                });
+            }
+
+            // --- افزودن فیلد جدید به لیست گزینه‌ها ---
+            function addOptionField() {
+                 const optionsList = document.getElementById('optionsList');
+                 const div = document.createElement('div');
+                 div.className = 'input-group mb-2';
+                 div.innerHTML = `
+                     <input type="text" class="form-control" placeholder="گزینه جدید">
+                     <button class="btn btn-outline-danger remove-option-btn" type="button"><i class="bi bi-trash"></i></button>
+                 `;
+                 optionsList.appendChild(div);
+                 div.querySelector('.remove-option-btn').addEventListener('click', function() {
+                     this.closest('.input-group').remove();
+                 });
+            }
+
+            // --- آماده‌سازی Modal ویرایش ---
             async function handleEditField(fieldId) {
                 try {
                     const response = await fetch(`@Url.Action("GetField", "Forms")/${fieldId}`);
                     if (response.ok) {
                         const field = await response.json();
+
                         document.getElementById('editFieldId').value = field.id;
+                        document.getElementById('editFieldType').value = field.fieldType;
                         document.getElementById('editFieldLabel').value = field.label;
+                        document.getElementById('modalFieldLabel').textContent = field.label;
+                        document.getElementById('editFieldName').value = field.name || '';
                         document.getElementById('editFieldIsRequired').checked = field.isRequired;
+                        document.getElementById('editFieldCssClasses').value = field.cssClasses || '';
+
+                        // منطق بارگذاری گزینه‌ها (Dropdown/Radio)
+                        const fieldOptionsContainer = document.getElementById('fieldOptions');
+                        const isListType = [8, 9].includes(field.fieldType); // 8:Radio, 9:Dropdown
+                        if (isListType) {
+                            renderOptions(JSON.parse(field.settingsJson || '[]'));
+                            fieldOptionsContainer.style.display = 'block';
+                        } else {
+                            fieldOptionsContainer.style.display = 'none';
+                        }
+
+                        // منطق بارگذاری منطق شرطی
+                        const conditionalData = JSON.parse(field.conditionalLogicJson || '{}');
+                        const enableConditionalLogic = document.getElementById('enableConditionalLogic');
+                        const conditionalRulesDiv = document.getElementById('conditionalRules');
+
+                        const isConditionalEnabled = conditionalData.rule && conditionalData.rule.targetFieldId > 0;
+
+                        enableConditionalLogic.checked = isConditionalEnabled;
+                        conditionalRulesDiv.style.display = isConditionalEnabled ? 'block' : 'none';
+
+                        document.getElementById('conditionalAction').value = conditionalData.action || 'show';
+                        document.getElementById('conditionalOperator').value = conditionalData.rule?.operatorType || 'equals';
+                        document.getElementById('conditionalValue').value = conditionalData.rule?.value || '';
+
+                        document.getElementById('conditionalOperator').dispatchEvent(new Event('change')); // برای فعال/غیرفعال کردن فیلد مقدار شرطی
+
+                        // پر کردن دراپ‌داون فیلدهای هدف برای منطق شرطی
+                        populateConditionalTargetField(field.id, conditionalData.rule?.targetFieldId);
+
                         editModal.show();
                     } else {
                         throw new Error("Field not found");
@@ -221,16 +394,70 @@
                 }
             }
 
+            function populateConditionalTargetField(currentFieldId, selectedTargetId) {
+                const selectElement = document.getElementById('conditionalTargetField');
+                selectElement.innerHTML = '<option value="">فیلد را انتخاب کنید</option>';
+
+                formFieldsData.forEach(f => {
+                    // فیلد فعلی نباید به خودش وابسته شود
+                    if (f.Id !== currentFieldId) {
+                        const option = document.createElement('option');
+                        option.value = f.Id;
+                        option.textContent = f.Label + ` (ID: ${f.Id})`;
+                        if (f.Id.toString() === selectedTargetId?.toString()) {
+                            option.selected = true;
+                        }
+                        selectElement.appendChild(option);
+                    }
+                });
+            }
+
+            // --- تابع ذخیره تغییرات ---
             async function handleSaveChanges() {
                 const fieldId = document.getElementById('editFieldId').value;
+                const fieldType = document.getElementById('editFieldType').value;
+                const optionsList = document.getElementById('optionsList');
+                const enableConditionalLogic = document.getElementById('enableConditionalLogic').checked;
+
+                let settingsJson = null;
+                let conditionalLogicJson = null;
+
+                // جمع‌آوری گزینه‌ها برای Dropdown/Radio
+                const isListType = [8, 9].includes(parseInt(fieldType));
+                if (isListType) {
+                    const options = Array.from(optionsList.querySelectorAll('input')).map(input => input.value);
+                    settingsJson = JSON.stringify(options);
+                }
+
+                // جمع‌آوری منطق شرطی
+                if (enableConditionalLogic && document.getElementById('conditionalTargetField').value) {
+                    const ruleData = {
+                        targetFieldId: document.getElementById('conditionalTargetField').value,
+                        operatorType: document.getElementById('conditionalOperator').value,
+                        value: document.getElementById('conditionalValue').value
+                    };
+                    const action = document.getElementById('conditionalAction').value;
+
+                    conditionalLogicJson = JSON.stringify({
+                        action: action, // show or hide
+                        // isVisible: action === 'show' ? true : false, // isVisible فقط در سمت کلاینت برای مقدار اولیه استفاده می شود
+                        rule: ruleData
+                    });
+                } else {
+                    conditionalLogicJson = null; // خاموش کردن منطق شرطی
+                }
+
                 const data = {
                     Id: parseInt(fieldId),
                     Label: document.getElementById('editFieldLabel').value,
+                    Name: document.getElementById('editFieldName').value || '',
                     IsRequired: document.getElementById('editFieldIsRequired').checked,
-                    // ارسال مقادیر دیگر برای جلوگیری از null شدن آن‌ها در کنترلر
+                    CssClasses: document.getElementById('editFieldCssClasses').value,
                     FormId: formId,
-                    FieldType: 0, // مقدار پیش فرض، در سرور نادیده گرفته میشود
-                    Order: 0,     // مقدار پیش فرض، در سرور نادیده گرفته میشود
+                    FieldType: parseInt(fieldType),
+                    Order: 0,
+                    SettingsJson: settingsJson,
+                    ConditionalLogicJson: conditionalLogicJson
                 };
 
                 try {
@@ -240,6 +467,13 @@
                         const elementToReplace = document.querySelector(`[data-field-id='${fieldId}']`);
                         if(elementToReplace) {
                            elementToReplace.outerHTML = newHtml;
+                           // به‌روزرسانی لیست فیلدهای موجود برای استفاده در شرطی‌سازی
+                           // این بخش در یک پیاده سازی کامل، باید بعد از هر تغییر نام یا برچسب فراخوانی شود.
+                           // برای این دمو، فرض می‌کنیم Name تغییر نکرده است.
+                           const updatedFieldData = formFieldsData.find(f => f.Id === parseInt(fieldId));
+                           if (updatedFieldData) {
+                               updatedFieldData.Label = data.Label;
+                           }
                         }
                         editModal.hide();
                         toastr.success('فیلد ویرایش شد.');
@@ -251,6 +485,7 @@
                 }
             }
 
+            // --- تابع حذف فیلد ---
             function handleDeleteField(fieldId) {
                 Swal.fire({
                     title: 'آیا مطمئن هستید؟', text: "این عملیات غیرقابل بازگشت است!", icon: 'warning',
@@ -260,9 +495,14 @@
                         try {
                             await sendRequest(`@Url.Action("DeleteField", "Forms")/${fieldId}`, 'POST');
                             document.querySelector(`[data-field-id='${fieldId}']`)?.remove();
+                            // حذف از لیست فیلدهای موجود
+                             const index = formFieldsData.findIndex(f => f.Id === parseInt(fieldId));
+                             if (index > -1) {
+                                formFieldsData.splice(index, 1);
+                             }
                             Swal.fire('حذف شد!', 'فیلد مورد نظر حذف شد.', 'success');
                         } catch (e) {
-                             Swal.fire('خطا!', 'خطایی در حذف فیلد رخ داد.', 'error');
+                            Swal.fire('خطا!', 'خطایی در حذف فیلد رخ داد.', 'error');
                         }
                     }
                 });
@@ -270,4 +510,3 @@
         });
     </script>
 }
-

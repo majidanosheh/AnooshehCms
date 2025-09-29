@@ -1,8 +1,24 @@
-﻿namespace WebApplication16.Services
+﻿using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
+
+namespace WebApplication16.Services
 {
     public interface IFileStorageService
     {
-        Task<string> SaveFileAsync(Stream fileStream, string fileName);
-
+        Task<string?> StoreFileAsync(IFormFile file, string folderName);
+        void DeleteFile(string filePath);
     }
 }
+
+
+//using Microsoft.AspNetCore.Http;
+//using System.Threading.Tasks;
+
+//namespace WebApplication16.Services
+//{
+//    public interface IFileStorageService
+//    {
+//        Task<string?> StoreFileAsync(IFormFile file, string folderName);
+//        void DeleteFile(string filePath);
+//    }
+//}

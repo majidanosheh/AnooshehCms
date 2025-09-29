@@ -51,9 +51,22 @@ builder.Services.AddScoped<IFileTypeValidator, DbFileTypeValidator>();
 builder.Services.AddHttpContextAccessor();
 
 // --- ثبت سرویس های فرم ساز ---
+// در Program.cs و قبل از builder.Build();
 builder.Services.AddScoped<IFormService, FormService>();
 builder.Services.AddScoped<IFormFieldService, FormFieldService>();
 builder.Services.AddScoped<ISubmissionService, SubmissionService>();
+builder.Services.AddScoped<IFieldRendererService, FieldRendererService>();
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>(); // جدید: برای مدیریت آپلود فایل
+
+
+// تزریق سرویس‌های آپلود فایل
+builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+
+
+//builder.Services.AddScoped<IFormService, FormService>();
+//builder.Services.AddScoped<IFormFieldService, FormFieldService>();
+//builder.Services.AddScoped<ISubmissionService, SubmissionService>();
+
 // ---------------------------
 
 var app = builder.Build();

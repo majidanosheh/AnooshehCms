@@ -16,26 +16,3 @@ namespace WebApplication16.Services
         Task<Form?> GetFormWithSubmissionsAsync(int formId);
     }
 }
-
-
-
-
-//using WebApplication16.Models;
-
-//namespace WebApplication16.Services
-//{
-//    public interface IFormService
-//    {
-//        Task<IEnumerable<Form>> GetAllFormsAsync();
-//        Task<Form?> GetFormByIdAsync(int id);
-//        Task<Form?> GetFormWithFieldsAsync(int id);
-//        Task<Form?> GetFormWithSubmissionsAsync(int id);
-//        Task<Form> CreateFormAsync(Form form);
-//        Task UpdateFormAsync(Form form);
-//        Task DeleteFormAsync(int id);
-//        Task<Form?> GetFormBySlugWithFieldsAsync(string slug);
-
-//    }
-//}
-
-

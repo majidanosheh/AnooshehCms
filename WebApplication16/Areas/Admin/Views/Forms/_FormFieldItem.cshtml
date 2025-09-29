@@ -1,4 +1,26 @@
 ﻿@model WebApplication16.Models.FormField
+@using WebApplication16.Enums
+
+<div class="list-group-item d-flex justify-content-between align-items-center" data-field-id="@Model.Id">
+    <span class="handle me-3"><i class="bi bi-arrows-expand"></i></span>
+    <span class="flex-grow-1">
+        <strong>@Model.Label</strong>
+        <small class="text-muted">(@Model.FieldType.ToString())</small>
+        @if (Model.IsRequired)
+        {
+            <span class="badge bg-danger ms-2">الزامی</span>
+        }
+    </span>
+    <div class="field-actions">
+        <button class="btn btn-sm btn-info edit-field-btn" data-id="@Model.Id"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-danger delete-field-btn" data-id="@Model.Id"><i class="bi bi-trash"></i></button>
+    </div>
+</div>
+
+
+
+
+@* @model WebApplication16.Models.FormField
 
 <div class="list-group-item d-flex justify-content-between align-items-center" data-field-id="@Model.Id">
     <div>
@@ -20,7 +42,7 @@
     </div>
 </div>
 
-
+ *@
 
 @* @model WebApplication16.Models.FormField
 

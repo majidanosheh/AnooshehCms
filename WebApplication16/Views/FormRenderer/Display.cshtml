@@ -1,14 +1,16 @@
-﻿@model WebApplication16.Models.Form
+﻿@using WebApplication16.Services
+@model WebApplication16.Models.Form
+@inject IFieldRendererService FieldRendererService
 
 @{
     ViewData["Title"] = Model.Name;
-    Layout = "_Layout"; // از لی‌اوت اصلی سایت استفاده می‌کند
+    Layout = "_Layout";
 }
 
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card">
+            <div class="card @Model.CssClasses">
                 <div class="card-header">
                     <h3>@Model.Name</h3>
                 </div>
@@ -27,42 +29,177 @@
                         <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
                     }
 
-                    <form asp-action="Submit" asp-controller="FormRenderer" asp-route-slug="@Model.Slug" method="post">
+                    @* توجه: enctype="multipart/form-data" برای آپلود فایل الزامی است *@
+                    <form asp-action="Submit" asp-controller="FormRenderer" asp-route-slug="@Model.Slug" method="post" enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
-
-                        @foreach (var field in Model.FormFields)
+                        
+                        @foreach (var field in Model.FormFields.OrderBy(f => f.Order))
                         {
-                            <div class="mb-3">
-                                <label for="field-@field.Id" class="form-label">
-                                    @field.Label
-                                    @if (field.IsRequired)
-                                    {
-                                        <span class="text-danger">*</span>
-                                    }
-                                </label>
-
-                                @switch (field.FieldType)
-                                {
-                                    case WebApplication16.Enums.FieldType.Text:
-                                        <input type="text" id="field-@field.Id" name="@field.Label" class="form-control" @(field.IsRequired ? "required" : "") />
-                                        break;
-                                    case WebApplication16.Enums.FieldType.TextArea:
-                                        <textarea id="field-@field.Id" name="@field.Label" class="form-control" rows="3" @(field.IsRequired ? "required" : "")></textarea>
-                                        break;
-                                    case WebApplication16.Enums.FieldType.Number:
-                                        <input type="number" id="field-@field.Id" name="@field.Label" class="form-control" @(field.IsRequired ? "required" : "") />
-                                        break;
-                                    case WebApplication16.Enums.FieldType.Email:
-                                        <input type="email" id="field-@field.Id" name="@field.Label" class="form-control" @(field.IsRequired ? "required" : "") />
-                                        break;
-                                }
-                            </div>
+                            // رندر کردن پویا با FieldRendererService
+                            @Html.Raw(FieldRendererService.RenderField(field))
+                            
+                           
+                                // این بلوک کد برای تعریف fieldName باید اینجا باشد، اما بدون @{} اضافی
+                                string fieldName = field.Name ?? $"field_{field.Id}";
+                          
+                            @if (ViewData.ModelState.ContainsKey(fieldName))
+                            {
+                                <div class="text-danger">@ViewData.ModelState[fieldName].Errors.FirstOrDefault()?.ErrorMessage</div>
+                            }
                         }
 
-                        <button type="submit" class="btn btn-primary">ارسال</button>
+                        <button type="submit" class="btn btn-primary mt-3">ارسال</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            if (!form) return;
+
+            // map کردن فیلدهای کنترلی (بر اساس name) و فیلدهای هدف (بر اساس data-conditional)
+            const conditionalFields = {};
+
+            // تابع برای بازیابی نام برنامه‌نویسی فیلد بر اساس ID (از DOM)
+            function getFieldNameById(id) {
+                 const el = document.querySelector(`[data-field-id="${id}"] [name]`);
+                 return el ? el.name : null;
+            }
+
+            // مقدار دهی اولیه و ثبت شنونده‌ها
+            form.querySelectorAll('.conditional-field [name]').forEach(input => {
+                // برای ورودی‌های رادیویی، فقط اولین ورودی را گوش می‌دهیم تا رویداد تکراری نشود
+                if (input.type === 'radio' && input.name !== input.id) {
+                    if (form.querySelector(`input[name="${input.name}"]`) !== input) {
+                        return;
+                    }
+                }
+                
+                // ثبت شنونده برای تغییرات
+                input.addEventListener('change', checkConditions);
+                if (input.type === 'text' || input.type === 'number' || input.type === 'email' || input.type === 'password' || input.type === 'textarea') {
+                    input.addEventListener('keyup', checkConditions);
+                }
+            });
+            
+            // پر کردن نقشه فیلدهای هدف (که شرط دارند)
+            form.querySelectorAll('.conditional-field[data-conditional]').forEach(fieldDiv => {
+                // DECODE کردن HTML Encoded JSON
+                const rawData = fieldDiv.dataset.conditional.replace(/&quot;/g, '"');
+                const conditionalData = JSON.parse(rawData);
+                const rule = conditionalData.rule;
+                
+                if (rule && rule.targetFieldId > 0) {
+                    const controlFieldName = getFieldNameById(rule.targetFieldId); 
+                    
+                    if (controlFieldName) {
+                        if (!conditionalFields[controlFieldName]) {
+                            conditionalFields[controlFieldName] = [];
+                        }
+                        conditionalFields[controlFieldName].push({
+                            element: fieldDiv,
+                            rule: rule,
+                            action: conditionalData.action
+                        });
+                    }
+                }
+            });
+
+            function getControlFieldValue(fieldName) {
+                // دریافت مقدار فعلی فیلد کنترلی
+                const input = form.querySelector(`[name="${fieldName}"]:checked, [name="${fieldName}"]`);
+                
+                if (!input) return null;
+                
+                if (input.type === 'checkbox') {
+                    return input.checked ? input.value : null; 
+                }
+                
+                if (input.type === 'radio') {
+                    const checkedRadio = form.querySelector(`input[name="${fieldName}"]:checked`);
+                    return checkedRadio ? checkedRadio.value : null;
+                }
+                
+                return input.value;
+            }
+
+            function checkConditions() {
+                // بررسی فیلدهای تحت کنترل (Control Fields) که در conditionalFields وجود دارند
+                Object.keys(conditionalFields).forEach(controlFieldName => {
+                    const controlValue = getControlFieldValue(controlFieldName);
+                    
+                    // برای هر فیلدی که توسط این فیلد کنترلی، کنترل می‌شود
+                    conditionalFields[controlFieldName].forEach(fieldTarget => {
+                        const rule = fieldTarget.rule;
+                        const fieldDiv = fieldTarget.element;
+                        
+                        let conditionMet = false;
+                        
+                        // تمیز کردن مقدار برای مقایسه (تبدیل به رشته و trim)
+                        const cleanedControlValue = (controlValue === null || controlValue === undefined) ? '' : String(controlValue).trim();
+                        const ruleValue = String(rule.value || '').trim();
+                        
+                        // بررسی شرط
+                        switch (rule.operatorType) {
+                            case 'equals':
+                                conditionMet = cleanedControlValue === ruleValue;
+                                break;
+                            case 'not_equals':
+                                conditionMet = cleanedControlValue !== ruleValue;
+                                break;
+                            case 'greater_than':
+                                conditionMet = parseFloat(cleanedControlValue) > parseFloat(ruleValue);
+                                break;
+                            case 'less_than':
+                                conditionMet = parseFloat(cleanedControlValue) < parseFloat(ruleValue);
+                                break;
+                            case 'is_empty':
+                                conditionMet = cleanedControlValue === '';
+                                break;
+                            case 'is_not_empty':
+                                conditionMet = cleanedControlValue !== '';
+                                break;
+                            default:
+                                conditionMet = false;
+                        }
+                        
+                        const action = fieldTarget.action || 'show'; 
+                        let shouldDisplay = false;
+
+                        if (action === 'show') {
+                            shouldDisplay = conditionMet;
+                        } else if (action === 'hide') {
+                            shouldDisplay = !conditionMet;
+                        }
+                        
+                        fieldDiv.style.display = shouldDisplay ? '' : 'none';
+                        
+                        // اگر فیلد مخفی شد، مقدار آن را خالی یا غیر الزامی کنید
+                        const inputsInHiddenDiv = fieldDiv.querySelectorAll('[name]');
+                        if (!shouldDisplay) {
+                           inputsInHiddenDiv.forEach(input => {
+                               // حذف الزامی بودن برای فیلدهای مخفی
+                               input.removeAttribute('required'); 
+                           });
+                        } else {
+                            // بازگرداندن الزامی بودن
+                             const formFieldData = form.querySelector(`[data-field-id="${fieldDiv.dataset.fieldId}"]`);
+                             if (formFieldData && formFieldData.querySelector('[required]') === null && formFieldData.querySelector('[required="required"]')) {
+                                // اگر فیلد اصلی باید الزامی باشد
+                                input.setAttribute('required', 'required');
+                             }
+                        }
+                    });
+                });
+            }
+
+            // اجرای اولیه برای تنظیم وضعیت نمایش اولیه فیلدها
+            checkConditions();
+        });
+    </script>
+}
